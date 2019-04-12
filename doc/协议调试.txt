@@ -1,0 +1,15 @@
+{
+    "messageid": "233",
+    "timestamp": 2333333,
+    "deviceid": ”OGA730C1403020001”, //奥佳华_730C_14 年 3 月 2 日_第 0001 台
+    "cmd": "CMD-99",
+    "desired": {
+        "cmd":"CMD-102",
+        "ret":"OK"
+    }
+}
+{"messageid":"11","timestamp":1231323213,"deviceid":"OGA730C1403020001","cmd":"CMD-01","desired":{"version":"AD-31_V1.0"}}
+
+{"messageid":"11","timestamp":1231323213,"deviceid":"OGA730C1403020001","cmd":"CMD-99","desired":{"ret": "OK", "messageid": 10212}}
+
+{"messageid":"11","timestamp":1231323213,"deviceid":"OGA730C1403020001","cmd":"CMD-02","desired":{"heart":1}}

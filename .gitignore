@@ -1,0 +1,75 @@
+#2018.3.7 ËÎÑô
+
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.out
+*.app
+*.i*86
+*.x86_64
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+#orcad
+*.opj
+*.DBK
+*.DNSlck
+
+#iar
+**/Obj/
+**/settings/
+
+#MDK
+**/Objects/
+**/Listings/
+**/JlinkLog.txt
+
+#atom
+*.tags
+*.tags1
+
+#pads
+*.inf
+
+#slickedit
+*.vpwhist
+*.vtg
