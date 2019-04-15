@@ -256,32 +256,7 @@ int16_t MQTT_ReadData(uint8_t *dat, uint16_t len)
     }
     return rc;
 }
-/**
- * 打包登录信息
- * param “Connect”登录信息，“Heartbeat”心跳包
- */
-int32_t Publish_ConnectHeart(char *buf,char* param)
-{
-    cJSON *root;
-    char *s;
-    char time[32];
-    root = cJSON_CreateObject();
-    if (root != NULL) {
-        cJSON *bodyMain;
-        cJSON_AddStringToObject(root, "id", WorkParam.mqtt.MQTT_ClientID);
-        cJSON_AddItemToObjectCS(root, param, bodyMain = cJSON_CreateObject());
-        cJSON_AddStringToObject(bodyMain, "time",     time);
-        s = cJSON_PrintUnformatted(root);
-        if(s != NULL){
-            strcpy(buf,s);
-            MMEMORY_FREE(s);
-        }
-        DBG_LOG("[MQTT] ConnetHeartData:%s",buf);
 
-        cJSON_Delete(root);
-    }
-    return strlen(buf);
-}
 /**
  * 发布MQTT消息
  * @param topic   发布的主题名

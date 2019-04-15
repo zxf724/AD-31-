@@ -21,7 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "prjlib.h"
-
+#include "m2m_cfg.h"
 /* Exported define -----------------------------------------------------------*/
 #define M2M_TASK_STK_SIZE          256
 #define M2M_TASK_PRIO              osPriorityNormal
@@ -81,9 +81,6 @@ uint8_t M2M_ReadRSSI(void);
 BOOL    M2M_ReadPhoneNum(char *num);
 
 uint32_t M2M_HTTP_Get(char *url, char *getbuf, uint32_t buflen);
-
-uint32_t M2M_FTP_StartGetFile(char *server, char *user, char *pwd, char *path);
-BOOL M2M_FTP_GetData(uint8_t *buf, uint16_t *getlen);
 
 #endif
 

@@ -73,3 +73,6 @@ dkms.conf
 #slickedit
 *.vpwhist
 *.vtg
+
+#vsocde
+ipch

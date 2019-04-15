@@ -15,18 +15,17 @@
 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef _M2M_H
-#define _M2M_H
+#ifndef _M2M_CFG_H
+#define _M2M_CFG_H
 
 
 /* Includes ------------------------------------------------------------------*/
 #include "prjlib.h"
 #include "main.h"
-
+#include "m2m.h"
 /* Exported define -----------------------------------------------------------*/
 /*M2M的串口号*/
-#define M2M_UART_PORT      1
-
+#define M2M_UART_PORT       1
 
 
 #endif

@@ -18,6 +18,11 @@
 #ifndef _USER_COMM_H
 #define _USER_COMM_H
 
+#define NET_WIFI_EN   1
+#define USER_RTC_EN   0
+#define NET_M2M_EN    1
+#define NET_LAN_EN    0
+#define MQTT_EN       1
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
@@ -82,8 +87,8 @@
 #define FLASH_WRP_EN        1
 
 /*使能硬件看门狗*/
-#define IWDG_HW_EN          1
-#define MQTT_TYPE           0//0:MQTT,1:TCP
+#define IWDG_HW_EN          0
+
 /*定义默认的FTP升级地址*/
 #define DFU_FTP_DEF         "120.76.233.216"
 #define DFU_FTP_USER_DEF    "temiup"
@@ -116,9 +121,9 @@
 
 
 /*UART接收缓存的大小，必须为2的幂次方值*/
-#define UART1_RECEVIE_BUFFER_SIZE   1400
-#define UART2_RECEVIE_BUFFER_SIZE   256
-#define UART3_RECEVIE_BUFFER_SIZE   256
+#define UART1_RECEVIE_BUFFER_SIZE   512
+#define UART2_RECEVIE_BUFFER_SIZE   512
+#define UART3_RECEVIE_BUFFER_SIZE   512
 #if UART4 && UART4 > 1
 #define UART4_RECEVIE_BUFFER_SIZE   0
 #endif

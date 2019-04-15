@@ -27,8 +27,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 static uint32_t tsHTTP = 0;
-static uint32_t DFU_Size, DFU_Count;
-static uint8_t  DFU_Buf[DFU_BUF_SIZE];
+
 
 /* Private function prototypes -----------------------------------------------*/
 static void DFU_Console(int argc, char *argv[]);
@@ -75,34 +74,7 @@ void DFU_Init(void)
  */
 void DFU_Poll(void)
 {
-    BOOL ret = FALSE;
-    uint16_t read = 0;
-    uint32_t addr = 0;
 
-    /*M2M FTP升级*/
-    if (DFU_Size > 0) {
-        if (DFU_Count < DFU_Size) {
-            read = DFU_BUF_SIZE;
-            ret = M2M_FTP_GetData(DFU_Buf, &read);
-            if (ret == FALSE) {
-                DBG_LOG("FTP get data fault, DFU break.");
-                portENTER_CRITICAL();
-                DFU_Size = 0;
-                DFU_Count = 0;
-                portEXIT_CRITICAL();
-            } else if (read > 0) {
-                addr = DFU_SAVE_ADDR() + DFU_Count;
-                SFlash_Write(addr, DFU_Buf, read);
-                DFU_Count += read;
-                DBG_LOG("FTP get size:%d", DFU_Count);
-            } else {
-                osDelay(500);
-            }
-        } else {
-            DBG_LOG("FTP data get don, image size%d, system reset to pagram...", DFU_Size);
-            NVIC_SystemReset();
-        }
-    }
     /*HTTP 自动升级*/
 #if DFU_HTTP_AUTO_EN > 0
     if (TS_IS_OVER(tsHTTP, DFU_HTTP_AUTO_TIME * 1000)) {
@@ -176,30 +148,10 @@ static void DFU_Console(int argc, char *argv[])
 {
     uint8_t *buf = NULL;
     uint32_t size = 0,  write = 0, l = 0, addr = 0;
-    char *ftp = DFU_FTP_DEF, *user = DFU_FTP_USER_DEF, *pwd = DFU_FTP_PWD_DEF, *path = DFU_FTP_PATH_DEF;
 
     argv++;
     argc--;
-    if (ARGV_EQUAL("FTP")) {
-        if (argv[1] && argv[2] && argv[3] && argv[4]) {
-            ftp = argv[1];
-            user = argv[2];
-            pwd = argv[3];
-            path = argv[4];
-        }
-        DBG_LOG("DFU FTP get file start, please wait for download.");
-        size = M2M_FTP_StartGetFile(ftp, user, pwd, path);
-        DBG_LOG("DFU FTP get file size:%d", size);
-        if (size > 0) {
-            DBG_LOG("DFU FTP memory erase start.");
-            SFlash_EraseSectors(DFU_SAVE_ADDR(), size / SFLASH_SECTOR_SIZE + 1);
-            DBG_LOG("Erease OK");
-            portENTER_CRITICAL();
-            DFU_Size = size;
-            DFU_Count = 0;
-            portEXIT_CRITICAL();
-        }
-    } else if (ARGV_EQUAL("download")) {
+    if (ARGV_EQUAL("download")) {
         size = uatoi(argv[1]);
         DBG_LOG("DFU memory erase start.");
         SFlash_EraseSectors(DFU_SAVE_ADDR(), size / SFLASH_SECTOR_SIZE + 1);

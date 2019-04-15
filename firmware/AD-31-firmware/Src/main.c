@@ -51,7 +51,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "wifi.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "user_comm.h"
@@ -59,6 +59,7 @@
 #include "aes_ex.h"
 #endif
 #include "datasave.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -432,20 +433,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SFLASH_CS_Pin|M2M_KEY_Pin|M2M_POWER_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SFLASH_CS_Pin|M2M_POWERKEY_Pin|M2M_POWER_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SFLASH_WP_Pin|WIFI_RST_Pin|WIFI_POWER_EN_Pin|LED_NET_Pin 
                           |LED_ERR_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : SFLASH_CS_Pin M2M_KEY_Pin M2M_POWER_EN_Pin */
-  GPIO_InitStruct.Pin = SFLASH_CS_Pin|M2M_KEY_Pin|M2M_POWER_EN_Pin;
+  /*Configure GPIO pins : SFLASH_CS_Pin M2M_POWER_EN_Pin */
+  GPIO_InitStruct.Pin = SFLASH_CS_Pin|M2M_POWER_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SFLASH_WP_Pin WIFI_RST_Pin WIFI_EN_Pin LED_NET_Pin 
+  /*Configure GPIO pins : SFLASH_WP_Pin WIFI_RST_Pin WIFI_POWER_EN_Pin LED_NET_Pin 
                            LED_ERR_Pin */
   GPIO_InitStruct.Pin = SFLASH_WP_Pin|WIFI_RST_Pin|WIFI_POWER_EN_Pin|LED_NET_Pin 
                           |LED_ERR_Pin;
@@ -454,12 +455,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : M2M_POWERKEY_Pin */
+  GPIO_InitStruct.Pin = M2M_POWERKEY_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(M2M_POWERKEY_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : M2M_STATUS_Pin */
   GPIO_InitStruct.Pin = M2M_STATUS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(M2M_STATUS_GPIO_Port, &GPIO_InitStruct);
-    
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -519,7 +527,7 @@ void StartDefaultTask(void const * argument)
 #if NET_LAN_EN > 0
     w5500_Init(&hspi1);
 #endif
-    /*初始化业�?*/
+    /*初始化业*/
 #if PROCESS_EN > 0
     Process_Init();
 #endif

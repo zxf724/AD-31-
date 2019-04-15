@@ -3,7 +3,7 @@
  * @Author: alexy
  * @LastEditors: Please set LastEditors
  * @Date: 2019-04-09 21:20:10
- * @LastEditTime: 2019-04-09 21:41:15
+ * @LastEditTime: 2019-04-12 18:15:21
  */
 
 
@@ -16,7 +16,7 @@
 
 
 /* Exported define -----------------------------------------------------------*/
-#define NET_LAN_EN   1
+
 #define VERSION_LAN         "W5500"
 
 #define W5500_CS_Pin GPIO_PIN_4

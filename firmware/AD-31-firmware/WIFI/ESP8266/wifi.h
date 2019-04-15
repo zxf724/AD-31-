@@ -23,12 +23,12 @@
 #include "prjlib.h"
 #include "system.h"
 /* Exported define -----------------------------------------------------------*/
-#define NET_WIFI_EN                 1
+
 
 /*WIFI的串口号*/
 #define WIFI_UART_PORT      3
 
-#define WIFI_TASK_STK_SIZE          256
+#define WIFI_TASK_STK_SIZE          128
 #define WIFI_TASK_PRIO              osPriorityNormal
 #define WIFI_SEND_Q_SIZE            8
 
@@ -45,14 +45,14 @@
 /*TCP未连接*/
 #define WIFI_NOT_CONNECT_TIMEOUT    300
 
-#define WIFI_SEND_MAX_SIZE          1800
-#define WIFI_RECEIVE_MAX_SIZE       2048
+#define WIFI_SEND_MAX_SIZE          520
+#define WIFI_RECEIVE_MAX_SIZE       520
 
 /*WIFI远程调试使能*/
 #define WIFI_CMD_EN                 0
 
 /*WIFI省电使能，使能后当WIFI长时间未连网时关机*/
-#define WIFI_POWER_SAVE_EN          1
+#define WIFI_POWER_SAVE_EN          0
 
 /*WIFI省电关机的时间，单位秒*/
 #define WIFI_POWER_SAVE_TIME        60

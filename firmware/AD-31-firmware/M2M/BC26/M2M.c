@@ -298,44 +298,9 @@ uint32_t M2M_HTTP_Get(char *url, char *getbuf, uint32_t buflen)
     return ret;
 }
 
-/**
- * 开始FTP下载
- * @param server FTP服务器地址
- * @param user   FTP账号
- * @param pwd    FTP密码
- * @param path   文件路径
- * @return get成功返回文件的长度，否则返回0
- */
-uint32_t M2M_FTP_StartGetFile(char *server, char *user, char *pwd, char *path)
-{
-    uint32_t ret = FALSE;
 
-    if (M2M_Param.status == M2M_status_online && server != NULL && user != NULL && pwd != NULL && path != NULL) {
-        osMutexWait(M2M_MutexId, osWaitForever);
-        ret = FTP_StartGet(server, user, pwd, path);
-        osMutexRelease(M2M_MutexId);
-    }
 
-    return ret;
-}
 
-/**
- * FTP 读出数据
- * @param buf    数据读存的缓存
- * @param getlen 数据读出的长度指针，传入需读入的长度，传出实际读出的长度
- * @return FTP会话存在时返回TRUE
- */
-BOOL M2M_FTP_GetData(uint8_t *buf, uint16_t *getlen)
-{
-    BOOL ret = FALSE;
-
-    if (buf != NULL && getlen != NULL && *getlen > 0) {
-        osMutexWait(M2M_MutexId, osWaitForever);
-        ret = FTP_GetData(buf, getlen);
-        osMutexRelease(M2M_MutexId);
-    }
-    return ret;
-}
 
 /**
  * 获取M2M的连接状态

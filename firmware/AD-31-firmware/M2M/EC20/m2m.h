@@ -1,51 +1,51 @@
-/*
- * @Description: ec20 é©±åŠ¨
- * @Author: alexy
- * @LastEditors: Please set LastEditors
- * @Date: 2019-04-09 21:55:02
- * @LastEditTime: 2019-04-09 21:59:42
+/**
+ * **********************************************************************
+ *             Copyright (c) 2016 temp. All Rights Reserved.
+ * @file M2M.h
+ * @author ËÎÑô
+ * @version V1.0
+ * @date 2016.4.1
+ * @brief M2MÇı¶¯º¯ÊıÍ·ÎÄ¼ş.
+ *
+ * **********************************************************************
+ * @note
+ *
+ * **********************************************************************
  */
 
 
-
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __EC20_H
-#define __EC20_H
+#ifndef _M2M_H
+#define _M2M_H
 
 
 /* Includes ------------------------------------------------------------------*/
 #include "prjlib.h"
-#include "system.h"
+
 /* Exported define -----------------------------------------------------------*/
-#define M2M_TASK_STK_SIZE          256
+#define M2M_TASK_STK_SIZE          128
 #define M2M_TASK_PRIO              osPriorityNormal
 #define M2M_SEND_Q_SIZE            8
 
 #define M2M_UART_BDR               115200
-#define M2M_UART_REFRESH_TICK      200
+#define M2M_UART_REFRESH_TICK      1000
 
-#define M2M_AT_ECHO_DEFAULT        TRUE
+#define M2M_SEND_MAX_SIZE          520
+#define M2M_RECEIVE_MAX_SIZE       520
 
-#define M2M_SEND_MAX_SIZE          1400
-#define M2M_RECEIVE_MAX_SIZE       1400
+/*M2MÊ¡µçÊ¹ÄÜ£¬Ê¹ÄÜM2M4G³¤Ê±¼äÎ´Á¬ÍøÊ±¹Ø»ú*/
+#define M2M_POWER_SAVE_EN          0
 
-/*M2Mè¿œç¨‹è°ƒè¯•ä½¿èƒ½*/
-#define M2M_CMD_EN                 1
-
-/*M2Mçœç”µä½¿èƒ½ï¼Œä½¿èƒ½åå½“M2Mé•¿æ—¶é—´æœªè¿ç½‘æ—¶å…³æœº*/
-#define M2M_POWER_SAVE_EN          1
-
-/*M2Mçœç”µå…³æœºçš„æ—¶é—´ï¼Œå•ä½ç§’*/
+/*M2MÊ¡µç¹Ø»úµÄÊ±¼ä£¬µ¥Î»Ãë*/
 #define M2M_POWER_SAVE_TIME        60
 
-/*å®šä¹‰M2Mæ¨¡å—æ§åˆ¶é€‰é¡¹*/
+/*¶¨ÒåM2MÄ£¿é¿ØÖÆÑ¡Ïî*/
 #define M2M_OPT_RESET              0x01
 #define M2M_OPT_SET_SOCKET         0x04
 #define M2M_OPT_SET_APN            0x08
 
 /* Exported types ------------------------------------------------------------*/
-typedef enum
-{
+typedef enum {
     M2M_status_poweroff = 0,
     M2M_status_poweron,
     M2M_status_nocard,
@@ -74,10 +74,7 @@ void M2M_SetSocketParam(char *server, uint16_t port, Sock_RecCBFun callback);
 uint8_t M2M_ReadRSSI(void);
 BOOL    M2M_ReadPhoneNum(char *num);
 
-uint32_t M2M_HTTP_Get(char *url, char *getbuf, uint32_t buflen);
-
-uint32_t M2M_FTP_StartGetFile(char *server, char *user, char *pwd, char *path);
-BOOL M2M_FTP_GetData(uint8_t *buf, uint16_t *getlen);
+BOOL M2M_TTS(char *text);
 
 #endif
 

@@ -86,6 +86,7 @@
 /* Hook prototypes */
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
 void vApplicationMallocFailedHook(void);
 
 /* USER CODE BEGIN 2 */
@@ -114,6 +115,15 @@ __weak void vApplicationTickHook( void )
    functions can be used (those that end in FromISR()). */
 }
 /* USER CODE END 3 */
+
+/* USER CODE BEGIN 4 */
+__weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
+{
+   /* Run time stack overflow checking is performed if
+   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+   called if a stack overflow is detected. */
+}
+/* USER CODE END 4 */
 
 /* USER CODE BEGIN 5 */
 __weak void vApplicationMallocFailedHook(void)

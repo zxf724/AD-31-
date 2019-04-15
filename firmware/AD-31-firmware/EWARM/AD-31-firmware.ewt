@@ -1167,15 +1167,6 @@
       </file>
     </group>
     <group>
-      <name>MQTT</name>
-      <group>
-        <name>FreeRTOS</name>
-      </group>
-      <group>
-        <name>MQTTPacket</name>
-      </group>
-    </group>
-    <group>
       <name>User</name>
       <file>
         <name>$PROJ_DIR$\..\Src\console.c</name>
@@ -1409,10 +1400,10 @@
     <group>
       <name>EC20</name>
       <file>
-        <name>$PROJ_DIR$\..\M2M\EC20\m2m.c</name>
+        <name>$PROJ_DIR$\..\M2M\EC20\M2M.c</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\M2M\EC20\m2m.h</name>
+        <name>$PROJ_DIR$\..\M2M\EC20\M2M.h</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\M2M\m2m_cfg.h</name>

@@ -100,8 +100,8 @@ void Error_Handler(void);
 #define LED_NET_GPIO_Port GPIOB
 #define LED_ERR_Pin GPIO_PIN_15
 #define LED_ERR_GPIO_Port GPIOB
-#define M2M_KEY_Pin GPIO_PIN_8
-#define M2M_KEY_GPIO_Port GPIOA
+#define M2M_POWERKEY_Pin GPIO_PIN_8
+#define M2M_POWERKEY_GPIO_Port GPIOA
 #define M2M_STATUS_Pin GPIO_PIN_11
 #define M2M_STATUS_GPIO_Port GPIOA
 #define M2M_POWER_EN_Pin GPIO_PIN_12

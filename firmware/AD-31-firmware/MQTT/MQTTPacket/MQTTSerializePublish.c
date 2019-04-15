@@ -85,21 +85,10 @@ exit:
     return rc;
 #elif MQTT_TYPE == 1
     unsigned char *ptr = buf;
-    MQTTHeader header = { 0 };
     int rc = 0;
     FUNC_ENTRY;
-    //writeChar(&ptr, header.byte); /* write header */
-
-    //ptr += MQTTPacket_encode(ptr, rem_len); /* write remaining length */;
-
-    //writeMQTTString(&ptr, topicName);
-
-    //if (qos > 0) writeInt(&ptr, packetid);
-
     memcpy(ptr, payload, payloadlen);
-    //ptr += payloadlen;
     rc = payloadlen;
-    //exit:
     FUNC_EXIT_RC(rc);
     return rc;
 #endif

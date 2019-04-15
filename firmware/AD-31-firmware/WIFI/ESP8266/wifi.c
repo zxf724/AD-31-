@@ -42,7 +42,7 @@ typedef struct
 /* Private define ------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#define WIFI_PWR_ON()                   HAL_GPIO_WritePin(WIFI_POWER_EN_GPIO_Port, WIFI_POWER_EN_Pin, GPIO_PIN_SET)
+#define WIFI_PWR_ON()                   HAL_GPIO_WritePin(WIFI_POWER_EN_GPIO_Port, WIFI_POWER_EN_Pin, GPIO_PIN_SET) //IO_H有被优化的可能
 #define WIFI_PWR_OFF()                  HAL_GPIO_WritePin(WIFI_POWER_EN_GPIO_Port, WIFI_POWER_EN_Pin, GPIO_PIN_RESET)
 
 #define WIFI_RST_ON()                   HAL_GPIO_WritePin(WIFI_RST_GPIO_Port, WIFI_RST_Pin, GPIO_PIN_RESET)
@@ -114,7 +114,6 @@ void WIFI_Init(void)
 
     CMD_ENT_DEF(WIFI, WIFI_Console);
     Cmd_AddEntrance(CMD_ENT(WIFI));
-    WIFI_SetOnOff(TRUE);
     DBG_LOG("WIFI Init.");
 }
 
@@ -127,7 +126,6 @@ void WIFI_Task(void const *argument)
     TWDT_DEF(wifiTask, 30000);
     TWDT_ADD(wifiTask);
     TWDT_CLEAR(wifiTask);
-
     DBG_LOG("WIFI Task Start.");
     while (1) {
         osDelay(5);
@@ -516,7 +514,7 @@ static void WIFI_ModuleInit(void)
     WIFI_PWR_ON();
     WIFI_Param.status = wifi_status_poweron;
 
-    WIFI_WAIT_ACK("ready", 3000);
+    WIFI_WAIT_ACK("ready", 300);
     WIFI_SEND_DATA("AT\r\n", 4);
     if (WIFI_WAIT_ACK("OK", 2000)) {
         /*仅用AT模式*/

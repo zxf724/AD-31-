@@ -4,59 +4,37 @@
  * @file M2M.c
  * @version V1.0
  * @date 2016.4.1
- * @brief M2Mé©±åŠ¨å‡½æ•°æ–‡ä»¶,é€‚ç”¨äºSIM800L.
+ * @brief M2MÇı¶¯º¯ÊıÎÄ¼ş,ÊÊÓÃÓÚM26.
  *
  * *********************************************************************
  * @note
- * 2016.12.18 å¢åŠ socketæ¥æ”¶å›è°ƒ.
+ * 2016.12.18 Ôö¼Ósocket½ÓÊÕ»Øµ÷.
  *
  * *********************************************************************
- * @author å®‹é˜³
+ * @author ËÎÑô
  */
 
 
 
 /* Includes ------------------------------------------------------------------*/
-#include "m2m.h"
 #include "user_comm.h"
-#include "cmsis_os.h"
-#include "console.h"
 #include "m2m_cfg.h"
 /* Private typedef -----------------------------------------------------------*/
-static const char *ipRetArray[] = {
-    "IP INITIAL",
-    "IP START",
-    "IP CONFIG",
-    "IP M2MACT",
-    "IP STATUS",
-    "TCP CONNECTING",
-    "CONNECT OK",
-    "TCP CLOSING",
-    "TCP CLOSED",
-    "PDP DEACT",
-    NULL
-};
-
-/*TCPIPè¿æ¥çŠ¶æ€*/
+/*TCPIPÁ¬½Ó×´Ì¬*/
 typedef enum {
-    ip_status_INITIAL = 0,
-    ip_status_CONNECTING,
-    ip_status_OK,
-    ip_status_CLOSING,
-    ip_status_START,
-    ip_status_CONFIG,
-    ip_status_M2MACT,
-    ip_status_STATUS,
-    ip_status_CLOSED,
-    PDP_DECT
+    ip_status_initial = 0,
+    ip_status_Opening,
+    ip_status_Connected,
+    ip_status_Listening,
+    ip_status_Closing,
+    ip_status_Closed
 } IP_Status_t;
 
-typedef struct
-{
-    char       *APN;
-    char       *APN_User;
-    char       *APN_Pwd;
-    char       *ConnectAddress;
+typedef struct {
+    char* APN;
+    char* APN_User;
+    char* APN_Pwd;
+    char* ConnectAddress;
     uint16_t    ConnectPort;
     Sock_RecCBFun callback;
     uint8_t     rssi;
@@ -67,18 +45,14 @@ typedef struct
     BOOL        powerOnOff;
 } M2M_Param_t;
 
-
 /* Private define ------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#define M2M_PWR_ON()                   IO_H(M2M_POWER_EN)
-#define M2M_PWR_OFF()                  IO_H(M2M_POWER_EN)
+#define M2M_PWR_ON()                   HAL_GPIO_WritePin(M2M_POWER_EN_GPIO_Port, M2M_POWER_EN_Pin, GPIO_PIN_SET)
+#define M2M_PWR_OFF()                  HAL_GPIO_WritePin(M2M_POWER_EN_GPIO_Port, M2M_POWER_EN_Pin, GPIO_PIN_RESET)
 
-#define M2M_KEY_ON()                   IO_L(M2M_KEY)
-#define M2M_KEY_OFF()                  IO_H(M2M_KEY)
-
-#define M2M_LED_ON()                   IO_H(LED_M2M)
-#define M2M_LED_OFF()                  IO_L(LED_M2M)
+#define M2M_KEY_ON()                   HAL_GPIO_WritePin(M2M_POWERKEY_GPIO_Port, M2M_POWERKEY_Pin, GPIO_PIN_RESET)
+#define M2M_KEY_OFF()                  HAL_GPIO_WritePin(M2M_POWERKEY_GPIO_Port, M2M_POWERKEY_Pin, GPIO_PIN_SET)
 
 #define M2M_SEND_DATA(dat, len)        UART_SendData(M2M_UART_PORT, dat, len)
 #define M2M_SEND_AT(cmd)               UART_Printf(M2M_UART_PORT, "AT+%s\r\n", cmd)
@@ -95,73 +69,63 @@ typedef struct
 static osMessageQId M2M_TCPIP_SendQId;
 static M2M_Param_t M2M_Param;
 static uint32_t M2M_Opt;
+
+static osMutexId M2M_MutexId;
+
+static uint8_t* pRspBuf = NULL;
 #if M2M_CMD_EN > 0
 static uint8_t CMD_Pipe = 0;
 #endif
 
-static osMutexId M2M_MutexId;
-
-static uint8_t *pRspBuf = NULL;
-
 /* Private function prototypes -----------------------------------------------*/
-void M2M_Task(void const *argument);
+void M2M_Task(void const* argument);
 static void M2M_ManagerPoll(void);
 static void M2M_Intercept_Proc(void);
-static void M2M_TCPIP_ReceiveProc(char *pReceive);
+static void M2M_TCPIP_ReceiveProc(char* pReceive);
 static void M2M_TCPIP_SendProc(void);
 static BOOL M2M_ModuleInit(void);
 static BOOL M2M_ModulePowerOn(void);
 static BOOL M2M_ModulePowerOff(void);
 static BOOL ConnectShut(void);
 static BOOL ConnectClose(void);
-static BOOL ConnectStart(uint8_t socketid, char *addr, uint16_t port);
+static BOOL ConnectStart(char* addr, uint16_t port);
 static uint8_t GetRSSI(void);
 static IP_Status_t GetIPStatus(void);
 static BOOL GetNetWorkStatus(void);
-static BOOL ReadPhoneNum(char *num);
-static uint32_t HttpGet(char *url, char *readbuf, uint32_t buflen);
-static uint16_t TCPIP_Send(uint8_t *data, uint16_t len);
-static uint32_t FTP_StartGet(char *server, char *user, char *pwd, char *filenme);
-static BOOL FTP_GetData(uint8_t *buf, uint16_t *getlen);
-static char* WaitATRsp(char *token, uint16_t time);
-static void M2M_Console(int argc, char *argv[]);
+static BOOL ReadPhoneNum(char* num);
+static uint16_t TCPIP_Send(uint8_t* data, uint16_t len);
+static void TTS_Play(char* text);
+static char* WaitATRsp(char* token, uint16_t time);
+static void M2M_Console(int argc, char* argv[]);
 
 /* Exported functions --------------------------------------------------------*/
 /**
- * M2Mé©±åŠ¨åˆå§‹åŒ–
+ * M2MÇı¶¯³õÊ¼»¯
  */
-void M2M_Init(void)
-{
+void M2M_Init(void) {
     osMutexDef(M2M);
     M2M_MutexId = osMutexCreate(osMutex(M2M));
-
-    osMessageQDef(TCPIP_SendQ, M2M_SEND_Q_SIZE, void *);
+    osMessageQDef(TCPIP_SendQ, M2M_SEND_Q_SIZE, void*);
     M2M_TCPIP_SendQId = osMessageCreate(osMessageQ(TCPIP_SendQ), NULL);
-
     osThreadDef(M2M, M2M_Task, M2M_TASK_PRIO, 0, M2M_TASK_STK_SIZE);
     osThreadCreate(osThread(M2M), NULL);
-
-    CMD_ENT_DEF(M2M, M2M_Console);
-    Cmd_AddEntrance(CMD_ENT(M2M));
-
+    CMD_ENT_DEF(ec20, M2M_Console);
+    Cmd_AddEntrance(CMD_ENT(ec20));
 #if M2M_CMD_EN > 0
     CMD_Pipe = CMD_Pipe_Register((CMD_SendFun)M2M_SocketSendData);
     DBG_LOG("M2M CMD pipe is %d.", CMD_Pipe);
 #endif
-
     DBG_LOG("M2M Init");
 }
 
 /**
- * M2Mä»»åŠ¡
- * @param argument åˆå§‹åŒ–å‚æ•°
+ * M2MÈÎÎñ
+ * @param argument ³õÊ¼»¯²ÎÊı
  */
-void M2M_Task(void const *argument)
-{
+void M2M_Task(void const* argument) {
     TWDT_DEF(M2MTask, 60000);
     TWDT_ADD(M2MTask);
     TWDT_CLEAR(M2MTask);
-
     DBG_LOG("M2M task start.");
     while (1) {
         osDelay(5);
@@ -170,7 +134,6 @@ void M2M_Task(void const *argument)
             M2M_ManagerPoll();
             M2M_Intercept_Proc();
             M2M_TCPIP_SendProc();
-
             if (pRspBuf != NULL) {
                 MMEMORY_FREE(pRspBuf);
                 pRspBuf = NULL;
@@ -181,25 +144,22 @@ void M2M_Task(void const *argument)
 }
 
 /**
- * M2Mæ¨¡å—é‡å¯
+ * M2MÄ£¿éÖØÆô
  */
-void M2M_ReStart(void)
-{
+void M2M_ReStart(void) {
     if (!M2M_OPT(M2M_OPT_RESET)) {
         M2M_OPT_SET(M2M_OPT_RESET);
     }
 }
 
 /**
- * M2Mæ¨¡å—å¼€å…³æœº
+ * M2MÄ£¿é¿ª¹Ø»ú
  */
-void M2M_SetOnOff(BOOL onoff)
-{
+void M2M_SetOnOff(BOOL onoff) {
     if (M2M_Param.powerOnOff != onoff) {
         MCPU_ENTER_CRITICAL();
         M2M_Param.powerOnOff = onoff;
         MCPU_EXIT_CRITICAL();
-
         if (onoff == FALSE) {
             M2M_OPT_SET(M2M_OPT_RESET);
         }
@@ -207,32 +167,30 @@ void M2M_SetOnOff(BOOL onoff)
 }
 
 /**
- * è¯»æ¨¡å—çš„çŠ¶æ€
- * @return è¿”å›æ¨¡å—çš„çŠ¶æ€
+ * ¶ÁÄ£¿éµÄ×´Ì¬
+ * @return ·µ»ØÄ£¿éµÄ×´Ì¬
  */
-M2M_Status_t M2M_ReadStatus(void)
-{
+M2M_Status_t M2M_ReadStatus(void) {
     return M2M_Param.status;
 }
 
 /**
- * M2M socket å‘é€æ•°æ®
- * @param data æ•°æ®æŒ‡é’ˆ
- * @param len  æ•°æ®çš„é•¿åº¦
- * @return è¿”å›å‘é€ç»“æœ
+ * M2M socket ·¢ËÍÊı¾İ
+ * @param data Êı¾İÖ¸Õë
+ * @param len  Êı¾İµÄ³¤¶È
+ * @return ·µ»Ø·¢ËÍ½á¹û
  */
-int16_t M2M_SocketSendData(uint8_t *data, uint16_t len)
-{
+int16_t M2M_SocketSendData(uint8_t* data, uint16_t len) {
     osStatus res = osOK;
-    uint8_t *pBuf = NULL, *p = NULL;
+    uint8_t* pBuf = NULL, *p = NULL;
     if (len > M2M_SEND_MAX_SIZE) {
         len = M2M_SEND_MAX_SIZE;
     }
-    if (M2M_Param.IP_Status == ip_status_OK) {
+    if (M2M_Param.IP_Status == ip_status_Connected) {
         pBuf = MMEMORY_ALLOC(len + 2);
         if (pBuf != NULL) {
             p = pBuf;
-            *(uint16_t *)p = len;
+            *(uint16_t*)p = len;
             p += 2;
             memcpy(p, data, len);
             res = osMessagePut(M2M_TCPIP_SendQId, (uint32_t)pBuf, 1000);
@@ -249,13 +207,11 @@ int16_t M2M_SocketSendData(uint8_t *data, uint16_t len)
 }
 
 /**
- * è¯»M2Mæ¨¡å—çš„RSSI
- * @return è¿”å›RSSIçš„å€¼
+ * ¶ÁM2MÄ£¿éµÄRSSI
+ * @return ·µ»ØRSSIµÄÖµ
  */
-uint8_t M2M_ReadRSSI(void)
-{
+uint8_t M2M_ReadRSSI(void) {
     uint8_t csq = 0;
-
     if (osMutexWait(M2M_MutexId, 100) == osOK) {
         csq = GetRSSI();
         M2M_Param.rssi = csq;
@@ -267,14 +223,12 @@ uint8_t M2M_ReadRSSI(void)
 }
 
 /**
- * è¯»æ‰‹æœºSIMå¡ç”µè¯å·ç 
- * @param num  å·ç è¿”å›çš„æŒ‡é’ˆ
- * @return è¿”å›è¯»å‡ºç»“æœ
+ * ¶ÁÊÖ»úSIM¿¨µç»°ºÅÂë
+ * @param num  ºÅÂë·µ»ØµÄÖ¸Õë
+ * @return ·µ»Ø¶Á³ö½á¹û
  */
-BOOL M2M_ReadPhoneNum(char *num)
-{
+BOOL M2M_ReadPhoneNum(char* num) {
     BOOL ret = FALSE;
-
     if (num != NULL && osMutexWait(M2M_MutexId, 100) == osOK) {
         ret = ReadPhoneNum(num);
         osMutexRelease(M2M_MutexId);
@@ -283,114 +237,67 @@ BOOL M2M_ReadPhoneNum(char *num)
 }
 
 /**
- * HTTP get
- * @param url     é“¾æ¥åœ°å€
- * @param getbuf è¯»å‡ºçš„ç¼“å­˜
- * @param buflen  ç¼“å­˜çš„é•¿åº¦
- * @return è¿”å›getç»“æœ
+ * M2M²¥·ÅTTS
+ *
+ * @param text   ´ı²¥·ÅµÄÎÄ±¾
+ * @return ²¥·Å³É¹¦·µ»ØTRUE
  */
-uint32_t M2M_HTTP_Get(char *url, char *getbuf, uint32_t buflen)
-{
-    uint32_t ret = FALSE;
-    if (M2M_Param.status == M2M_status_online && url != NULL) {
+BOOL M2M_TTS(char* text) {
+    if (text != NULL && M2M_Param.status != M2M_status_poweroff && M2M_Param.status != M2M_status_fault) {
         osMutexWait(M2M_MutexId, osWaitForever);
-        ret = HttpGet(url, getbuf, buflen);
+        TTS_Play(text);
         osMutexRelease(M2M_MutexId);
+        return  TRUE;
     }
-
-    return ret;
+    return FALSE;
 }
 
 /**
- * å¼€å§‹FTPä¸‹è½½
- * @param server FTPæœåŠ¡å™¨åœ°å€
- * @param user   FTPè´¦å·
- * @param pwd    FTPå¯†ç 
- * @param path   æ–‡ä»¶è·¯å¾„
- * @return getæˆåŠŸè¿”å›æ–‡ä»¶çš„é•¿åº¦ï¼Œå¦åˆ™è¿”å›0
+ * »ñÈ¡M2MµÄÁ¬½Ó×´Ì¬
+ * @retur  Ä£¿é¹ÊÕÏ·µ»Ø-1£¬
+ *         ÎŞÁ¬½Ó·µ»Ø0,ÒÑÁ¬½Ó·µ»Ø1.
  */
-uint32_t M2M_FTP_StartGetFile(char *server, char *user, char *pwd, char *path)
-{
-    uint32_t ret = FALSE;
-
-    if (M2M_Param.status == M2M_status_online && server != NULL && user != NULL && pwd != NULL && path != NULL) {
-        osMutexWait(M2M_MutexId, osWaitForever);
-        ret = FTP_StartGet(server, user, pwd, path);
-        osMutexRelease(M2M_MutexId);
-    }
-
-    return ret;
-}
-
-/**
- * FTP è¯»å‡ºæ•°æ®
- * @param buf    æ•°æ®è¯»å­˜çš„ç¼“å­˜
- * @param getlen æ•°æ®è¯»å‡ºçš„é•¿åº¦æŒ‡é’ˆï¼Œä¼ å…¥éœ€è¯»å…¥çš„é•¿åº¦ï¼Œä¼ å‡ºå®é™…è¯»å‡ºçš„é•¿åº¦
- * @return FTPä¼šè¯å­˜åœ¨æ—¶è¿”å›TRUE
- */
-BOOL M2M_FTP_GetData(uint8_t *buf, uint16_t *getlen)
-{
-    BOOL ret = FALSE;
-
-    if (buf != NULL && getlen != NULL && *getlen > 0) {
-        osMutexWait(M2M_MutexId, osWaitForever);
-        ret = FTP_GetData(buf, getlen);
-        osMutexRelease(M2M_MutexId);
-    }
-    return ret;
-}
-
-/**
- * è·å–M2Mçš„è¿æ¥çŠ¶æ€
- * @retur  æ¨¡å—æ•…éšœè¿”å›-1ï¼Œ
- *         æ— è¿æ¥è¿”å›0,å·²è¿æ¥è¿”å›1.
- */
-int8_t M2M_IsSocketConnect(void)
-{
+int8_t M2M_IsSocketConnect(void) {
     int8_t ret = -1;
-
     if (M2M_Param.status != M2M_status_fault && M2M_Param.status != M2M_status_nocard) {
         ret = 0;
     }
-
     if (M2M_Param.status == M2M_status_online
-        && M2M_Param.IP_Status == ip_status_OK
-        && !M2M_OPT(M2M_OPT_SET_SOCKET)) {
+            && M2M_Param.IP_Status == ip_status_Connected
+            && !M2M_OPT(M2M_OPT_SET_SOCKET)) {
         ret = 1;
     }
     return ret;
 }
 
 /**
- * M2Mæ¨¡å—è®¾ç½®socketå‚æ•°
- * @param server æœåŠ¡å™¨çš„IPåœ°å€æˆ–è€…åŸŸåå
- * @param port   æœåŠ¡å™¨çš„ç«¯å£å·
+ * M2MÄ£¿éÉèÖÃsocket²ÎÊı
+ * @param server ·şÎñÆ÷µÄIPµØÖ·»òÕßÓòÃûÃû
+ * @param port   ·şÎñÆ÷µÄ¶Ë¿ÚºÅ
  */
-void M2M_SetSocketParam(char *server, uint16_t port, Sock_RecCBFun callback)
-{
+void M2M_SetSocketParam(char* server, uint16_t port, Sock_RecCBFun callback) {
     if (server != M2M_Param.ConnectAddress || port != M2M_Param.ConnectPort || callback != M2M_Param.callback) {
         MCPU_ENTER_CRITICAL();
         M2M_Param.ConnectAddress = server;
         M2M_Param.ConnectPort = port;
         M2M_Param.callback = callback;
+        M2M_Param.IP_Status = ip_status_Closing;
         M2M_Opt |= M2M_OPT_SET_SOCKET;
         MCPU_EXIT_CRITICAL();
     }
     if (server != NULL && port > 0) {
-        /*M2Må¼€æœº*/
+        /*M2M¿ª»ú*/
         M2M_SetOnOff(TRUE);
     }
 }
 
 /* Private function prototypes ----------------------------------------------*/
 /**
- * M2Mç®¡ç†è½®è¯¢.
+ * M2M¹ÜÀíÂÖÑ¯.
  */
-static void M2M_ManagerPoll(void)
-{
+static void M2M_ManagerPoll(void) {
     static uint32_t tsNet = 0, tsConnect = 0, tsStatus = 0;
-
-    /*é”™è¯¯é‡å¯ç®¡ç†*/
+    /*´íÎóÖØÆô¹ÜÀí*/
     if (M2M_Param.ErrorCount > 10 || M2M_Param.ConnectFailCount > 10 || M2M_OPT(M2M_OPT_RESET)) {
         M2M_OPT_CLEAR(M2M_OPT_RESET);
         M2M_Param.ErrorCount = 0;
@@ -398,93 +305,82 @@ static void M2M_ManagerPoll(void)
         M2M_ModulePowerOff();
         M2M_Param.status = M2M_status_poweroff;
     }
-
-    /*è‡ªåŠ¨å¼€æœºä¸çŠ¶æ€ç®¡ç†*/
+    /*×Ô¶¯¿ª»úÓë×´Ì¬¹ÜÀí*/
     switch (M2M_Param.status) {
-    case M2M_status_poweroff:
-        if (M2M_Param.powerOnOff) {
-            M2M_ModulePowerOn();
-            DBG_LOG("M2M module power on init.");
-        }
-        break;
-    case M2M_status_poweron:
-        M2M_Param.status = (GetNetWorkStatus() == TRUE) ? M2M_status_online : M2M_status_nonet;
-        M2M_Param.rssi =  GetRSSI();
-        break;
-    case M2M_status_nonet:
-        if (TS_IS_OVER(tsNet, 30000)) {
-            TS_INIT(tsNet);
-            if (GetNetWorkStatus() == FALSE) {
-                M2M_Param.ConnectFailCount++;
-            } else {
-                M2M_Param.status = M2M_status_online;
-            }
-        }
-        break;
-    default:
-        break;
-    }
-    if (M2M_Param.status == M2M_status_online) {
-        /*è®¾ç½®å‚æ•°*/
-        if (M2M_OPT(M2M_OPT_SET_SOCKET)) {
-            if (M2M_Param.IP_Status != ip_status_CLOSED && M2M_Param.IP_Status != ip_status_INITIAL) {
-                M2M_Param.IP_Status = ip_status_CLOSED;
-                M2M_OPT_CLEAR(M2M_OPT_SET_SOCKET);
-                ConnectClose();
-            } else {
-                M2M_OPT_CLEAR(M2M_OPT_SET_SOCKET);
-            }
-        }
-        
-        /*ç»´æŒTCPé“¾è·¯*/
-        switch (M2M_Param.IP_Status) {
-        case ip_status_CLOSING:{
-            ConnectClose();
-            //ConnectShut();
-            M2M_Param.IP_Status = ip_status_INITIAL;
-        }           
-        case ip_status_CLOSED:
-        case ip_status_INITIAL:
-            TS_INIT(tsConnect);
-            if (M2M_Param.ConnectAddress != NULL && M2M_Param.ConnectPort > 0) {
-                ConnectStart(0, M2M_Param.ConnectAddress, M2M_Param.ConnectPort);
-                M2M_Param.IP_Status = GetIPStatus();
+        case M2M_status_poweroff:
+            if (M2M_Param.powerOnOff) {
+                DBG_LOG("M2M module power on init.");
+                M2M_ModulePowerOn();
             }
             break;
-        case ip_status_STATUS:
-        case PDP_DECT:
-            ConnectShut();
-            M2M_Param.IP_Status = ip_status_INITIAL;
+        case M2M_status_poweron:
+            M2M_Param.status = (GetNetWorkStatus() == TRUE) ? M2M_status_online : M2M_status_nonet;
+            M2M_Param.rssi =  GetRSSI();
             break;
-        case ip_status_OK:
-            if (TS_IS_OVER(tsStatus, 10000)) {
-                TS_INIT(tsStatus);
-                M2M_Param.rssi =  GetRSSI();
-                M2M_Param.IP_Status = GetIPStatus();
+        case M2M_status_nonet:
+            if (TS_IS_OVER(tsNet, 30000)) {
+                TS_INIT(tsNet);
+                if (GetNetWorkStatus() == FALSE) {
+                    M2M_Param.ConnectFailCount++;
+                } else {
+                    M2M_Param.status = M2M_status_online;
+                }
             }
             break;
         default:
-            /*20ç§’æœªæˆåŠŸè¿æ¥é‡è¿*/
-            if (TS_IS_OVER(tsConnect, 20000)) {
-                ConnectShut();
-                M2M_Param.IP_Status = ip_status_CLOSED;
-            }
-            if (TS_IS_OVER(tsStatus, 3000)) {
+            break;
+    }
+    if (M2M_Param.status == M2M_status_online) {
+        /*ÉèÖÃ²ÎÊı*/
+        if (M2M_OPT(M2M_OPT_SET_SOCKET)) {
+            if (M2M_Param.IP_Status != ip_status_Closed && M2M_Param.IP_Status != ip_status_initial) {
+                ConnectClose();
                 TS_INIT(tsStatus);
                 M2M_Param.IP_Status = GetIPStatus();
+                M2M_OPT_CLEAR(M2M_OPT_SET_SOCKET);
+            } else {
+                M2M_OPT_CLEAR(M2M_OPT_SET_SOCKET);
             }
-            break;
+        }
+        /*Î¬³ÖTCPÁ´Â·*/
+        switch (M2M_Param.IP_Status) {
+            case ip_status_Closed:
+            case ip_status_initial:
+                TS_INIT(tsConnect);
+                TS_INIT(tsStatus);
+                if (M2M_Param.ConnectAddress != NULL && M2M_Param.ConnectPort > 0) {
+                    ConnectStart(M2M_Param.ConnectAddress, M2M_Param.ConnectPort);
+                    M2M_Param.IP_Status = GetIPStatus();
+                }
+                break;
+            case ip_status_Connected:
+            case ip_status_Listening:
+                break;
+            case ip_status_Closing:
+            case ip_status_Opening:
+                /*20ÃëÎ´³É¹¦Á¬½ÓÖØÁ¬*/
+                if (TS_IS_OVER(tsConnect, 20000)) {
+                    ConnectShut();
+                    M2M_Param.IP_Status = ip_status_Closed;
+                }
+                if (TS_IS_OVER(tsStatus, 3000)) {
+                    TS_INIT(tsStatus);
+                    M2M_Param.IP_Status = GetIPStatus();
+                    if (M2M_Param.IP_Status == ip_status_Closing) {
+                        ConnectShut();
+                    }
+                }
+            default:
+                break;
         }
     }
-    /*M2Mç½‘ç»œç¦»çº¿æ—¶å¤ä½ipè¿æ¥çŠ¶æ€*/
+    /*GSMÍøÂçÀëÏßÊ±¸´Î»ipÁ¬½Ó×´Ì¬*/
     else {
-        M2M_Param.IP_Status = ip_status_INITIAL;
+        M2M_Param.IP_Status = ip_status_initial;
     }
-
-    /*socketæœªä½¿ç”¨æ—¶å…³æœºçœç”µ*/
+    /*socketÎ´Ê¹ÓÃÊ±¹Ø»úÊ¡µç*/
 #if M2M_POWER_SAVE_EN > 0
     static uint32_t tsPowerSave = 0;
-
     if (M2M_Param.ConnectAddress != NULL) {
         TS_INIT(tsPowerSave);
     } else if (TS_IS_OVER(tsPowerSave, M2M_POWER_SAVE_TIME * 1000) && M2M_Param.status != M2M_status_poweroff) {
@@ -496,45 +392,33 @@ static void M2M_ManagerPoll(void)
 }
 
 /**
- * M2M ä¸²å£æ•°æ®ç›‘å¬å¤„ç†
+ * M2M ´®¿ÚÊı¾İ¼àÌı´¦Àí
  */
-static void M2M_Intercept_Proc(void)
-{
-    char *p = NULL, *pbuf = NULL;
+static void M2M_Intercept_Proc(void) {
+    char* p = NULL, *pbuf = NULL;
     uint16_t len = 0;
-
     len = UART_DataSize(M2M_UART_PORT);
     if (len == 0) {
         return;
     }
     if ((UART_QueryByte(M2M_UART_PORT, len - 1) == '\n'
-         && UART_QueryByte(M2M_UART_PORT, len - 2) == '\r' && UART_GetDataIdleTicks(M2M_UART_PORT) >= 20)
-        || UART_GetDataIdleTicks(M2M_UART_PORT) >= M2M_UART_REFRESH_TICK) {
-
+            && UART_QueryByte(M2M_UART_PORT, len - 2) == '\r' && UART_GetDataIdleTicks(M2M_UART_PORT) >= 20)
+            || UART_GetDataIdleTicks(M2M_UART_PORT) >= M2M_UART_REFRESH_TICK) {
         if (len >= (M2M_RECEIVE_MAX_SIZE - 1)) {
             len = M2M_RECEIVE_MAX_SIZE - 1;
         }
         pbuf = MMEMORY_ALLOC(len + 1);
         if (pbuf != NULL) {
-            len = UART_ReadData(M2M_UART_PORT, (uint8_t *)pbuf, len);
+            len = UART_ReadData(M2M_UART_PORT, (uint8_t*)pbuf, len);
             *(pbuf + len) = 0;
-            p = (char *)pbuf;
-            /*è¿æ¥çŠ¶æ€æ›´æ–°*/
-            if (strstr(p, "+QIOPEN: 0,0")) {
+            p = (char*)pbuf;
+            /*Á¬½Ó×´Ì¬¸üĞÂ*/
+            if (strstr(p, "+QIURC: \"closed\"") || strstr(p, "+QIOPEN:")) {
                 M2M_Param.IP_Status = GetIPStatus();
             }
-            if(strstr(p, "+QIURC: \"closed\",")){
-                M2M_Param.IP_Status = ip_status_CLOSED;
-            }
-            /*ç½‘ç»œçŠ¶æ€æ›´æ–°*/
-            char* p1 = NULL;
-            p1 = strstr(p, "+CEREG: ");
-            if (p1) {
-                uint8_t net = 0;
-                //while (*p1 && (*p1++) != ',');
-                net = uatoi(p1 + 8);
-                //(net == 1 || net == 5) ? TRUE : FALSE;
-                M2M_Param.status = ((net == 1 || net == 5) ? M2M_status_online : M2M_status_nonet);
+            /*ÍøÂç×´Ì¬¸üĞÂ*/
+            if (strstr(p, "+CREG:")) {
+                M2M_Param.status = ((GetNetWorkStatus() == TRUE) ? M2M_status_online : M2M_status_nonet);
                 M2M_Param.rssi =  GetRSSI();
             }
             M2M_TCPIP_ReceiveProc(pbuf);
@@ -544,49 +428,43 @@ static void M2M_Intercept_Proc(void)
 }
 
 /**
- * TCPIPæ•°æ®æ¥æ”¶æ”¶å¤„ç†
- * @param pReceive æ¥æ”¶åˆ°çš„æ•°æ®çš„æŒ‡é’ˆ
+ * TCPIPÊı¾İ½ÓÊÕÊÕ´¦Àí
+ * @param pReceive ½ÓÊÕµ½µÄÊı¾İµÄÖ¸Õë
  */
-static void M2M_TCPIP_ReceiveProc(char *pReceive)
-{
+static void M2M_TCPIP_ReceiveProc(char* pReceive) {
     uint16_t len = 0;
-    char *p = NULL;
-
-    p = strstr(pReceive, "+QIURC: \"recv\",0,");
+    char* p = NULL;
+    p = strstr(pReceive, "+QIURC: \"recv\"");
     while (p != NULL) {
         while (*p && *p++ != ',');
         while (*p && *p++ != ',');
         len = uatoi(p);
         while (*p && *p++ != '\n');
-        HexStrToByte(p, (uint8_t *)p, len << 1);
+        DBG_LOG("test len:%d", len);
 #if M2M_CMD_EN > 0
-        CMD_NewData(CMD_Pipe, (uint8_t *)p, len);
+        CMD_NewData(CMD_Pipe, (uint8_t*)p, len);
 #endif
         if (M2M_Param.callback != NULL) {
-            M2M_Param.callback((uint8_t *)p, len);
+            M2M_Param.callback((uint8_t*)p, len);
         }
-
         p = p + len + 1;
-        p =  strstr(p, "+QIURC: \"recv\",0,");
+        p =  strstr(p, "IPD,");
     }
 }
 
 /**
- * TCPIPæ•°æ®å‘é€å¤„ç†
+ * TCPIPÊı¾İ·¢ËÍ´¦Àí
  */
-static void M2M_TCPIP_SendProc(void)
-{
+static void M2M_TCPIP_SendProc(void) {
     osEvent evt;
     uint16_t len = 0;
-    uint8_t *p = NULL;
-
-    if (M2M_Param.IP_Status == ip_status_OK) {
+    uint8_t* p = NULL;
+    if (M2M_Param.IP_Status == ip_status_Connected) {
         evt = osMessageGet(M2M_TCPIP_SendQId, 2);
         if (evt.status == osEventMessage) {
             p = evt.value.p;
-            len = *(uint16_t *)(p);
+            len = *(uint16_t*)(p);
             p += 2;
-
             if (len > 0) {
                 if (TCPIP_Send(p, len) == FALSE) {
                     M2M_Param.IP_Status = GetIPStatus();
@@ -596,62 +474,30 @@ static void M2M_TCPIP_SendProc(void)
         }
     }
 }
-/**
- * TCPIPå‘é€æ•°æ®
- * @param data æ•°æ®æŒ‡é’ˆ
- * @param len  æ•°æ®é•¿åº¦
- * @return è¿”å›å‘é€ç»“æœ
- */
-static uint16_t TCPIP_Send(uint8_t *data, uint16_t len)
-{
-    uint16_t sent = 0;
-    char *p = NULL;
-    char *hexdata = NULL;
-    if (data != NULL && len > 0) {
-        hexdata = pvPortMalloc((len << 1));  
-        if(hexdata != NULL){
-            ByteToHexStr(data, hexdata, len);
-            char tmp[25];
-            sprintf(tmp, "AT+QISENDEX=0,%d,", len);
-            M2M_SEND_DATA((uint8_t*)tmp,strlen(tmp));        
-            M2M_SEND_DATA((uint8_t*)hexdata, (len << 1));
-            vPortFree(hexdata); 
-            DBG_LOG("hexdata len: %d \r\n",(len << 1));
-            M2M_SEND_DATA("\r\n", 2);                    
-            p = M2M_WAIT_TOKEN("SEND OK", 10000);
-            if(p != NULL){
-                sent = len;
-            }   
-                        
-        }  
-        
-    }
-    return sent;
-}
 
 /**
- * M2Mè°ƒè¯•å‘½ä»¤
- * @param argc å‚æ•°é¡¹æ•°é‡
- * @param argv å‚æ•°åˆ—è¡¨
+ * M2Mµ÷ÊÔÃüÁî
+ * @param argc ²ÎÊıÏîÊıÁ¿
+ * @param argv ²ÎÊıÁĞ±í
  */
-static BOOL M2M_ModuleInit(void)
-{
-    char *p = NULL;
+static BOOL M2M_ModuleInit(void) {
+    char* p = NULL;
     BOOL r = FALSE;
-
     M2M_SEND_DATA("ATE1\r", 5);
-    M2M_WAIT_ACK("OK", 100);   
-    M2M_SEND_DATA("AT\r", 3);
-    M2M_WAIT_ACK("OK", 100);  
-    M2M_SEND_DATA("AT\r", 3);
     M2M_WAIT_ACK("OK", 100);
-    M2M_SEND_AT("CFUN=1");
-    M2M_WAIT_ACK("OK", 100); 
-    M2M_SEND_AT("CEREG=2");
-    M2M_WAIT_ACK("OK", 100);  
-     
+    M2M_SEND_DATA("ATV1\r", 5);
+    M2M_WAIT_ACK("OK", 100);
+    M2M_WAIT_TOKEN("+CPIN:", 5000);
+    M2M_SEND_AT("QSCLK=0");
+    M2M_WAIT_ACK("OK", 100);
+    M2M_SEND_AT("IFC=0,0");
+    M2M_WAIT_ACK("OK", 100);
+    M2M_SEND_AT("CREG=2");
+    M2M_WAIT_ACK("OK", 100);
+    M2M_SEND_AT("QSIDET=128");
+    M2M_WAIT_ACK("OK", 100);
     M2M_SEND_AT("CPIN?");
-    p = M2M_WAIT_TOKEN("+CPIN:", 200);
+    p = M2M_WAIT_TOKEN("+CPIN:", 1000);
     if (p != NULL) {
         if (strstr(p, "READY")) {
             r = TRUE;
@@ -660,24 +506,19 @@ static BOOL M2M_ModuleInit(void)
     return r;
 }
 
-
 /**
- * M2Mä¸Šç”µå¼€æœº
+ * M2MÉÏµç¿ª»ú
  */
-static BOOL M2M_ModulePowerOn(void)
-{
+static BOOL M2M_ModulePowerOn(void) {
     BOOL r = FALSE;
-
-    /*æ‰ç”µå»¶æ—¶ç¡®ä¿æ¨¡å—å¼€æœºæˆåŠŸ*/
+    /*µôµçÑÓÊ±È·±£Ä£¿é¿ª»ú³É¹¦*/
     M2M_KEY_OFF();
     M2M_PWR_OFF();
-    osDelay(200);
-
+    osDelay(1000);
     UART_SetBaudrate(M2M_UART_PORT, M2M_UART_BDR);
     M2M_PWR_ON();
     M2M_KEY_ON();
-
-    if (M2M_WAIT_ACK("RDY", 10000)) {
+    if (M2M_WAIT_ACK("RDY", 15000)) {
         M2M_KEY_OFF();
         if (M2M_ModuleInit()) {
             M2M_Param.status = M2M_status_poweron;
@@ -686,22 +527,28 @@ static BOOL M2M_ModulePowerOn(void)
         }
     } else {
         M2M_KEY_OFF();
-        M2M_SEND_DATA("AT\r", 3);
+        M2M_SEND_DATA("AT\r\n", 4);
         M2M_WAIT_ACK("OK", 100);
-        M2M_SEND_DATA("AT\r", 3);
-        if (M2M_WAIT_ACK("OK", 1000)) {            
+        M2M_SEND_DATA("AT\r\n", 4);
+        if (M2M_WAIT_ACK("OK", 1000)) {
+            M2M_AT_PRINTF("IPR=%d", M2M_UART_BDR);
+            M2M_WAIT_ACK("OK", 100);
+            M2M_SEND_DATA("AT&W\r", 5);
+            M2M_WAIT_ACK("OK", 200);
             if (M2M_ModuleInit()) {
                 M2M_Param.status = M2M_status_poweron;
             } else {
                 M2M_Param.status = M2M_status_nocard;
             }
         } else {
+            DBG_LOG("M2M module fault.");
             M2M_Param.status = M2M_status_fault;
             M2M_KEY_OFF();
             M2M_PWR_OFF();
         }
     }
     if (M2M_Param.status == M2M_status_nocard) {
+        DBG_LOG("M2M module no SIM card.");
         M2M_KEY_OFF();
         M2M_PWR_OFF();
     }
@@ -709,14 +556,12 @@ static BOOL M2M_ModulePowerOn(void)
 }
 
 /**
- * M2Må…³æœºå…³ç”µ
+ * M2M¹Ø»ú¹Øµç
  */
-static BOOL M2M_ModulePowerOff(void)
-{
+static BOOL M2M_ModulePowerOff(void) {
     BOOL r = FALSE;
-
     M2M_KEY_ON();
-    if (M2M_WAIT_ACK("OK", 3000)) {
+    if (M2M_WAIT_ACK("POWER DOWN", 3000)) {
         r = TRUE;
     }
     M2M_KEY_OFF();
@@ -725,71 +570,56 @@ static BOOL M2M_ModulePowerOff(void)
 }
 
 /**
- * M2Må…³é—­è¿æ¥ä¸PDPåœºæ™¯
- * @return è¿”å›å…³é—­ç»“æœ
+ * M2M¹Ø±ÕÁ¬½ÓÓëPDP³¡¾°
+ * @return ·µ»Ø¹Ø±Õ½á¹û
  */
-static BOOL ConnectShut(void)
-{
-    M2M_SEND_AT("CGACT=0,1");
-    return (M2M_WAIT_ACK("NO CARRIER", 10000) || M2M_WAIT_ACK("OK", 10000)) ? TRUE : FALSE;
+static BOOL ConnectShut(void) {
+    M2M_SEND_AT("QIDEACT=1");
+    return M2M_WAIT_ACK("OK", 3000) ? TRUE : FALSE;
 }
+
 /**
- * M2Må…³é—­è¿æ¥ä¸PDPåœºæ™¯
- * @return è¿”å›å…³é—­ç»“æœ
+ * M2M¹Ø±ÕÁ¬½Ó
+ * @return ·µ»Ø¹Ø±Õ½á¹û
  */
-static BOOL PdpOpen(void)
-{
-    M2M_SEND_AT("CGACT=1,1");
-    return M2M_WAIT_ACK("OK", 10000) ? TRUE : FALSE;
-}
-/**
- * M2Må…³é—­è¿æ¥
- * @return è¿”å›å…³é—­ç»“æœ
- */
-static BOOL ConnectClose(void)
-{
+static BOOL ConnectClose(void) {
     M2M_SEND_AT("QICLOSE=0");
     return M2M_WAIT_ACK("CLOSE OK", 10000) ? TRUE : FALSE;
 }
 
 /**
- * M2Må»ºç«‹è¿æ¥
- * @param addr è¿æ¥çš„IPåœ°å€æˆ–è€…åŸŸå
- * @param port è¿æ¥çš„ç«¯å£å·
- * @return è¿”å›è¿æ¥ç»“æœ
+ * M2M½¨Á¢Á¬½Ó
+ * @param addr Á¬½ÓµÄIPµØÖ·»òÕßÓòÃû
+ * @param port Á¬½ÓµÄ¶Ë¿ÚºÅ
+ * @return ·µ»ØÁ¬½Ó½á¹û
  */
-static BOOL ConnectStart(uint8_t socketid, char *addr, uint16_t port)
-{
-    BOOL r = FALSE;
-    //ConnectOpen();
-    M2M_WAIT_ACK("OK", 1000);
-
-    M2M_AT_PRINTF("QIOPEN=1,0,\"TCP\",\"%s\",\"%d\",0,0,0", addr, port);
-    if (M2M_WAIT_ACK("+QIOPEN: 0,0", 10000)) {
-        r = TRUE;
-        M2M_SEND_AT("QISWTMD=0,1");
-        M2M_WAIT_ACK("OK", 100); 
-        M2M_SEND_AT("QICFG=\"showlength\",1");
-        M2M_WAIT_ACK("OK", 100); 
-        M2M_SEND_AT("QICFG=\"dataformat\",1,1");
-        M2M_WAIT_ACK("OK", 100);
+static BOOL ConnectStart(char* addr, uint16_t port) {
+    char* p = NULL;
+    M2M_SEND_AT("QIACT?");
+    p = M2M_WAIT_TOKEN("+QIACT:", 1000);
+    if (p != NULL) {
+        while (*p && *p++ != ',');
+        if (*p == '1') {
+            M2M_AT_PRINTF("QIOPEN=1,0,\"TCP\",\"%s\",%d,0,1", addr, port);
+            if (M2M_WAIT_ACK("OK", 3000)) {
+                return TRUE;
+            }
+        }
     }
-    
-    return  r;
+    M2M_SEND_AT("QIACT=1");
+    M2M_WAIT_ACK("OK", 3000);
+    return FALSE;
 }
 
 /**
- * è·å–RSIIçš„å€¼
- * @return è¿”å›RSSIçš„å€¼
+ * »ñÈ¡RSIIµÄÖµ
+ * @return ·µ»ØRSSIµÄÖµ
  */
-static uint8_t GetRSSI(void)
-{
+static uint8_t GetRSSI(void) {
     uint8_t rssi = 0;
-    char *p = NULL;
-
+    char* p = NULL;
     M2M_SEND_AT("CSQ");
     p = M2M_WAIT_TOKEN("+CSQ:", 1000);
-
     if (p != NULL) {
         while (*p && !(isdigit(*p))) {
             p++;
@@ -800,56 +630,49 @@ static uint8_t GetRSSI(void)
 }
 
 /**
- * è·å–RSIIçš„å€¼
- * @return è¿”å›RSSIçš„å€¼
+ * »ñÈ¡RSIIµÄÖµ
+ * @return ·µ»ØRSSIµÄÖµ
  */
-static IP_Status_t GetIPStatus(void)
-{
-    uint8_t i = 3;
-    char *p = NULL;
-    M2M_SEND_AT("QISTATE=0,1");
-    p = M2M_WAIT_TOKEN("+QISTATE: ", 10000);
+static IP_Status_t GetIPStatus(void) {
+    uint8_t ret = 5;
+    char* p = NULL;
+    M2M_SEND_AT("QISTATE=1,0");
+    p = M2M_WAIT_TOKEN("+QISTATE:", 1000);
     if (p != NULL) {
         while (*p && *p++ != ',');
         while (*p && *p++ != ',');
         while (*p && *p++ != ',');
         while (*p && *p++ != ',');
         while (*p && *p++ != ',');
-        i = uatoi(p);
+        ret = uatoi(p);
     }
-    return (IP_Status_t)i;
+    return (IP_Status_t)ret;
 }
 
 /**
- * è·å–ç½‘ç»œçŠ¶æ€
- * @return è¿”å›ç½‘ç»œæ³¨å†ŒçŠ¶æ€
+ * »ñÈ¡ÍøÂç×´Ì¬
+ * @return ·µ»ØÍøÂç×¢²á×´Ì¬
  */
-static BOOL GetNetWorkStatus(void)
-{
+static BOOL GetNetWorkStatus(void) {
     uint8_t net = 0;
-    char *p = NULL;
-
-    M2M_SEND_AT("CEREG?");
-    p = M2M_WAIT_TOKEN("+CEREG: ", 1000);
-
+    char* p = NULL;
+    M2M_SEND_AT("CREG?");
+    p = M2M_WAIT_TOKEN("+CREG:", 1000);
     if (p != NULL) {
         while (*p && *p++ != ',');
-        //while (*p && *p++ != ',');
         net = uatoi(p);
     }
     return (net == 1 || net == 5) ? TRUE : FALSE;
 }
 
 /**
- * è¯»æ‰‹æœºSIMå¡ç”µè¯å·ç 
- * @param num  å·ç è¿”å›çš„æŒ‡é’ˆ
- * @return è¿”å›è¯»å‡ºç»“æœ
+ * ¶ÁÊÖ»úSIM¿¨µç»°ºÅÂë
+ * @param num  ºÅÂë·µ»ØµÄÖ¸Õë
+ * @return ·µ»Ø¶Á³ö½á¹û
  */
-static BOOL ReadPhoneNum(char *num)
-{
-    char *p = NULL;
+static BOOL ReadPhoneNum(char* num) {
+    char* p = NULL;
     BOOL ret = FALSE;
-
     if (num != NULL && osMutexWait(M2M_MutexId, 100) == osOK) {
         M2M_SEND_AT("CNUM");
         p = M2M_WAIT_ACK("+CNUM:", 200);
@@ -867,185 +690,54 @@ static BOOL ReadPhoneNum(char *num)
 }
 
 /**
- * HTTP get
- * @param url     é“¾æ¥åœ°å€
- * @param readbuf è¯»å‡ºçš„ç¼“å­˜
- * @param buflen  ç¼“å­˜çš„é•¿åº¦
- * @return è¿”å›getç»“æœ
+ * TCPIP·¢ËÍÊı¾İ
+ * @param data Êı¾İÖ¸Õë
+ * @param len  Êı¾İ³¤¶È
+ * @return ·µ»Ø·¢ËÍ½á¹û
  */
-static uint32_t HttpGet(char *url, char *readbuf, uint32_t buflen)
-{
-    uint32_t len = 0, ret = 0;
-    char *p = NULL;
-
-    M2M_SEND_AT("SAPBR=1,1");
-    M2M_WAIT_ACK("OK", 10000);
-
-    M2M_SEND_AT("HTTPINIT");
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-
-    M2M_SEND_AT("HTTPPARA=\"CID\",1");
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-
-    M2M_AT_PRINTF("HTTPPARA=\"URL\",\"%s\"", url);
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-
-    M2M_SEND_AT("HTTPACTION=0");
-    p = M2M_WAIT_TOKEN("+HTTPACTION:", 15000);
-    if (p != NULL) {
-        while (*p && *p++ != ',');
-        /*è¿”åŠ 200 OK*/
-        if (uatoi(p) == 200) {
-            M2M_SEND_AT("HTTPREAD");
-
-            p = M2M_WAIT_TOKEN("+HTTPREAD:", 10000);
-            if (p != NULL) {
-                while (*p && *p++ != ':');
-                p++;
-                len = uatoi(p);
-                if (len > buflen) {
-                    len = buflen;
-                }
-                while (*p && *p++ != '\n');
-                memcpy(readbuf, p, len);
-                ret = len;
+static uint16_t TCPIP_Send(uint8_t* data, uint16_t len) {
+    uint16_t sent = 0;
+    if (data != NULL && len > 0) {
+        M2M_AT_PRINTF("QISEND=0,%d", len);
+        if (M2M_WAIT_TOKEN(">", 1000)) {
+            M2M_SEND_DATA(data, len);
+            M2M_SEND_DATA("\x1A", 1);
+            if (M2M_WAIT_ACK("SEND OK", 3000)) {
+                sent = len;
             }
         }
     }
-    M2M_SEND_AT("HTTPTERM");
-    M2M_WAIT_ACK("OK", 1000);
-
-    M2M_SEND_AT("SAPBR=0,1");
-    M2M_WAIT_ACK("OK", 10000);
-
-    return ret;
-}
-
-
-/**
- * å¼€å§‹FTPä¸‹è½½
- * @param server FTPæœåŠ¡å™¨åœ°å€
- * @param user   FTPè´¦å·
- * @param pwd    FTPå¯†ç 
- * @param path   æ–‡ä»¶è·¯å¾„
- * @return getæˆåŠŸè¿”å›æ–‡ä»¶çš„é•¿åº¦ï¼Œå¦åˆ™è¿”å›0
- */
-static uint32_t FTP_StartGet(char *server, char *user, char *pwd, char *filename)
-{
-    char *p = NULL;
-    uint32_t size = 0;
-
-    M2M_SEND_AT("SAPBR=1,1");
-    M2M_WAIT_ACK("OK", 10000);
-
-    M2M_SEND_AT("FTPCID=1");
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-    M2M_AT_PRINTF("FTPSERV=\"%s\"", server);
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-    M2M_AT_PRINTF("FTPUN=\"%s\"", user);
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-    M2M_AT_PRINTF("FTPPW=\"%s\"", pwd);
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-    M2M_AT_PRINTF("FTPGETNAME=\"%s\"", filename);
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-    M2M_AT_PRINTF("FTPGETPATH=\"%s\"", "/");
-    if (M2M_WAIT_ACK("OK", 1000) == NULL) {
-        return 0;
-    }
-    M2M_SEND_AT("FTPSIZE");
-    p = M2M_WAIT_TOKEN("+FTPSIZE:", 15000);
-    if (p != NULL) {
-        while (*p && *p++ != ',');
-        if (*p == '0') {
-            while (*p && *p++ != ',');
-            size = uatoi(p);
-        }
-    }
-    if (size > 0) {
-        M2M_SEND_AT("FTPGET=1");
-        M2M_WAIT_ACK("OK", 1000);
-
-        M2M_WAIT_TOKEN("+FTPGET:", 15000);
-    }
-    return size;
+    return sent;
 }
 
 /**
- * FTP è¯»å‡ºæ•°æ®
- * @param buf    æ•°æ®è¯»å­˜çš„ç¼“å­˜
- * @param getlen æ•°æ®è¯»å‡ºçš„é•¿åº¦æŒ‡é’ˆï¼Œä¼ å…¥éœ€è¯»å…¥çš„é•¿åº¦ï¼Œä¼ å‡ºå®é™…è¯»å‡ºçš„é•¿åº¦
- * @return FTPä¼šè¯å­˜åœ¨æ—¶è¿”å›TRUE
+ * ²¥±¨TTS
+ *
+ * @param text   ´ı²¥±¨µÄÎÄ±¾
  */
-static BOOL FTP_GetData(uint8_t *buf, uint16_t *getlen)
-{
-    BOOL ret = FALSE;
-    char *p = NULL;
-    uint16_t size = 0;
-
-    M2M_AT_PRINTF("FTPGET=2,%d", *getlen);
-    p = M2M_WAIT_TOKEN("+FTPGET:", 3000);
-    if (p != NULL) {
-        while (*p && *p++ != ':');
-        p++;
-        if (*p == '1') {
-            while (*p && *p++ != ',');
-            if (*p == '1') {
-                ret = TRUE;
-            }
-        } else if (*p == '2')  {
-            while (*p && *p++ != ',');
-            size = uatoi(p);
-            if (size > 0 && buf != NULL) {
-                while (*p && *p++ != '\n');
-                memcpy(buf, p, size);
-            }
-            ret = TRUE;
-        }
-    }
-    *getlen = size;
-    if (size == 0 && ret == FALSE) {
-        M2M_SEND_AT("SAPBR=0,1");
-        M2M_WAIT_ACK("OK", 10000);
-    }
-    return ret;
+static void  TTS_Play(char* text) {
+    M2M_AT_PRINTF("QTTS=2,\"%s\"", text);
+    M2M_WAIT_ACK("OK", 3000);
 }
 
 /**
- * M2Mç­‰å¾…ATå‘½ä»¤è¿”å›
- * @param token ç­‰å¾…çš„token
- * @param time  ç­‰å¾…çš„æœ€é•¿æ—¶é—´
- * @return è¿”å›ç­‰å¾…çš„token,è¶…æ—¶è¿”å›NULL
+ * M2MµÈ´ıATÃüÁî·µ»Ø
+ * @param token µÈ´ıµÄtoken
+ * @param time  µÈ´ıµÄ×î³¤Ê±¼ä
+ * @return ·µ»ØµÈ´ıµÄtoken,³¬Ê±·µ»ØNULL
  */
-static char* WaitATRsp(char *token, uint16_t time)
-{
+static char* WaitATRsp(char* token, uint16_t time) {
     uint16_t len = 0;
     uint32_t ts = 0;
-    char *psearch = NULL;
-
+    char* psearch = NULL;
     ts = HAL_GetTick();
     while (HAL_GetTick() - ts <= time) {
         len = UART_DataSize(M2M_UART_PORT);
-        if (len > 0 && UART_GetDataIdleTicks(M2M_UART_PORT) >= 20) {
-            /*é¿å…æœªè¯»å‡ºçš„è¯­å¥å½±å“åé¢çš„æŒ‡ä»¤*/
-            if (UART_QueryByte(M2M_UART_PORT, len - 1) == '\n'
-                || *token == '>'
-                || UART_GetDataIdleTicks(M2M_UART_PORT) >= M2M_UART_REFRESH_TICK) {
+        if (len > 0 && UART_GetDataIdleTicks(M2M_UART_PORT) >= 10) {
+            /*±ÜÃâÎ´¶Á³öµÄÓï¾äÓ°ÏìºóÃæµÄÖ¸Áî*/
+            if ((UART_QueryByte(M2M_UART_PORT, len - 1) == '\n' && UART_QueryByte(M2M_UART_PORT, len - 2) == '\r')
+                    || *token == '>'
+                    || UART_GetDataIdleTicks(M2M_UART_PORT) >= M2M_UART_REFRESH_TICK) {
                 if (len >= (M2M_RECEIVE_MAX_SIZE - 1)) {
                     len = M2M_RECEIVE_MAX_SIZE - 1;
                 }
@@ -1057,8 +749,8 @@ static char* WaitATRsp(char *token, uint16_t time)
                 if (pRspBuf != NULL) {
                     len = UART_ReadData(M2M_UART_PORT, pRspBuf, len);
                     pRspBuf[len] = '\0';
-                    psearch = (char *)SearchMemData(pRspBuf, (uint8_t *)token, len, strlen(token));
-                    if (psearch != NULL || strstr((char *)pRspBuf, "ERROR")) {
+                    psearch = (char*)SearchMemData(pRspBuf, (uint8_t*)token, len, strlen(token));
+                    if (psearch != NULL || strstr((char*)pRspBuf, "ERROR")) {
                         break;
                     }
                 }
@@ -1075,26 +767,22 @@ static char* WaitATRsp(char *token, uint16_t time)
 }
 
 /**
- * M2Mè°ƒè¯•å‘½ä»¤
- * @param argc å‚æ•°é¡¹æ•°é‡
- * @param argv å‚æ•°åˆ—è¡¨
+ * M2Mµ÷ÊÔÃüÁî
+ * @param argc ²ÎÊıÏîÊıÁ¿
+ * @param argv ²ÎÊıÁĞ±í
  */
-static void M2M_Console(int argc, char *argv[])
-{
-    char *pssl = NULL;
-    uint16_t len = 0;
-
+static void M2M_Console(int argc, char* argv[]) {
     argv++;
     argc--;
     if (strcmp(argv[0], "power") == 0) {
         if (strcmp(argv[1], "on") == 0) {
-            M2M_SetOnOff(TRUE);
+            M2M_PWR_ON();
         } else if (strcmp(argv[1], "off") == 0) {
-            M2M_SetOnOff(FALSE);
+            M2M_PWR_OFF();
         }
         DBG_LOG("M2M power:%s", argv[1]);
     }  else if (strcmp(*argv, "status") == 0) {
-        DBG_LOG("M2M status:%d, IP status:%s.", (int)M2M_Param.status, ipRetArray[(int)M2M_Param.IP_Status]);
+        DBG_LOG("M2M status:%d, IP status:%d.", (int)M2M_Param.status, M2M_Param.IP_Status);
     }  else if (strcmp(*argv, "key") == 0) {
         if (strcmp(argv[1], "on") == 0) {
             M2M_KEY_ON();
@@ -1103,9 +791,8 @@ static void M2M_Console(int argc, char *argv[])
         }
         DBG_LOG("M2M power key:%s", argv[1]);
     } else if (strcmp(argv[0], "phonenum") == 0) {
-        char *num = NULL;
+        char* num = NULL;
         BOOL ret = FALSE;
-
         num = MMEMORY_ALLOC(16);
         ret = ReadPhoneNum(num);
         if (ret != FALSE) {
@@ -1117,7 +804,6 @@ static void M2M_Console(int argc, char *argv[])
     } else if (strcmp(*argv, "test") == 0) {
         argv++;
         argc--;
-
         osMutexWait(M2M_MutexId, osWaitForever);
         if (strcmp(argv[0], "poweron") == 0) {
             DBG_LOG("M2M test power on.");
@@ -1127,44 +813,31 @@ static void M2M_Console(int argc, char *argv[])
             M2M_ModulePowerOff();
         } else if (strcmp(argv[0], "csq") == 0) {
             uint8_t rssi = GetRSSI();
-
             DBG_LOG("M2M test CSQ:%d.", rssi);
         } else if (strcmp(argv[0], "at") == 0) {
             M2M_SEND_AT(argv[1]);
             DBG_LOG("M2M test send AT :%s.", argv[1]);
         } else if (strcmp(argv[0], "send") == 0) {
-            M2M_SEND_DATA((uint8_t *)argv[1], strlen(argv[1]));
+            M2M_SEND_DATA((uint8_t*)argv[1], strlen(argv[1]));
             DBG_LOG("M2M test send data OK.");
-        } else if (strcmp(argv[0], "httpget") == 0) {
-            len = uatoi(argv[2]);
-            if (len > 0) {
-                pssl = MMEMORY_ALLOC(len);
-                if (pssl != NULL) {
-                    DBG_LOG("M2M test HTTP get start, bufflen:%d.", len);
-                    len = HttpGet(argv[1], pssl, len);
-                    if (len > 0) {
-                        *(pssl + len) = 0;
-                        DBG_LOG("test httpget ret:%s", pssl);
-                    }
-                    MMEMORY_FREE(pssl);
-                }
-            }
-        } else if (strcmp(argv[0], "ftpstart") == 0) {
-            DBG_LOG("M2M test FTP get start ret:%d.",
-                    (int)FTP_StartGet(argv[1], argv[2], argv[3], argv[4]));
-        } else if (strcmp(argv[0], "ftpget") == 0) {
-            len = uatoi(argv[1]);
-            DBG_LOG("M2M test FTP get data len: %d, ret:%d.",
-                    len,
-                    (int)FTP_GetData(NULL, &len));
-        } else  if (strcmp(argv[0], "power") == 0) {
+        } else if (strcmp(argv[0], "power") == 0) {
             if (strcmp(argv[1], "on") == 0) {
                 M2M_PWR_ON();
             } else if (strcmp(argv[1], "off") == 0) {
                 M2M_PWR_OFF();
             }
             DBG_LOG("M2M test power:%s", argv[1]);
+        } else if (strcmp(argv[0], "tts") == 0) {
+            TTS_Play(argv[1]);
+            DBG_LOG("TTS_Play done.");
+        } else if (strcmp(argv[0], "connectshut") == 0) {
+            ConnectShut();
+            DBG_LOG("ConnectShut done.");
+        } else if (strcmp(argv[0], "errorcount") == 0) {
+            M2M_Param.ErrorCount = uatoi(argv[1]);
+            DBG_LOG("ErrorCount set done.");
         }
         osMutexRelease(M2M_MutexId);
     }
 }
+

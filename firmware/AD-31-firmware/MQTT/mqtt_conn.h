@@ -23,11 +23,11 @@
 #include "prjlib.h"
 #include "MQTTPacket.h"
 #include "MQTTClient.h"
-
+#define     MQTT_TYPE           1//0:MQTT,1:TCP
 /* Exported define -----------------------------------------------------------*/
 /*MQTT调试使能*/
 #define MQTT_DEBUG                      2
-#define MQTT_EN                         1
+
 /*协议处理缓存长度*/
 #define MQTT_TX_BUFF_SIZE               1400
 #define MQTT_RX_BUFF_SIZE               1400
