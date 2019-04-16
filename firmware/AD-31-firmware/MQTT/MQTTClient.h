@@ -85,6 +85,11 @@ typedef struct MQTTMessage
     size_t payloadlen;
 } MQTTMessage;
 
+typedef struct MQTTSubackData
+{
+    enum QoS grantedQoS;
+} MQTTSubackData;
+
 typedef struct MessageData
 {
     MQTTMessage* message;
@@ -104,7 +109,8 @@ typedef struct MQTTClient
     unsigned int keepAliveInterval;
     char ping_outstanding;
     int isconnected;
-
+    int cleansession;
+    
     struct MessageHandlers
     {
         const char* topicFilter;

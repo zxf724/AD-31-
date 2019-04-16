@@ -53,7 +53,6 @@ typedef union
 {
     unsigned char byte;                 /**< the whole byte */
 #if defined(REVERSED)
-
     struct {
         unsigned int type : 4;          /**< message type nibble */
         unsigned int dup : 1;               /**< DUP flag bit */

@@ -108,15 +108,12 @@
 #define DFU_HTTP_AUTO_TIME  86400
 /*开机启动HTTP升级使能*/
 #define DFU_HTTP_POWER_ON   1
-#if MQTT_TYPE == 0
-#define PROJECT             "AD-13"
-#define VERSION             "AD-13_V1.20"
-#elif MQTT_TYPE == 1
-#define PROJECT             "BD-06-T"
-#define VERSION             "BD-06-T_V1.02"
-#endif
-#define VERSION_HARDWARE    "BD-03_HD_V1.3"
-#define VERSION_M2M         "SIM800C"
+
+#define PROJECT             "AD-31"
+#define VERSION             "AD-31_V0.01"
+
+#define VERSION_HARDWARE    "AD-31_HD_V0.01"
+#define VERSION_M2M         "EC20"
 #define VERSION_WIFI        "ESP8266"
 
 

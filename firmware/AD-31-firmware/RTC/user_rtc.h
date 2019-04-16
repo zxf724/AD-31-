@@ -29,7 +29,7 @@
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
-void ExternRTC_Init(void);
+void rtc_init(void);
 BOOL RTC_ReadTime(struct tm* time);
 BOOL RTC_ReadTimeStr(char *buf);
 BOOL RTC_SetTime(struct tm* time);
