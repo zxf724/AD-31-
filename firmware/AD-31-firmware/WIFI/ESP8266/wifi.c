@@ -226,7 +226,6 @@ int8_t WIFI_IsSocketConnect(void)
     if (WIFI_Param.status != wifi_status_fault) {
         ret = 0;
     }
-
     if (WIFI_Param.status == wifi_status_socket_connected
         && !WIFI_OPT(WIFI_OPT_SET_SOCKET)) {
         ret = 1;
@@ -299,6 +298,7 @@ static void WIFI_ManagerPoll(void)
 
     /*开机管理*/
     if (WIFI_Param.status == wifi_status_poweroff) {
+        WIFI_Param.powerOnOff = TRUE;
         if (WIFI_Param.powerOnOff) {
             WIFI_ModuleInit();
             //DBG_LOG("WIFI module power on init.");

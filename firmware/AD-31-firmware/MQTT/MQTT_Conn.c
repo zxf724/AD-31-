@@ -73,7 +73,7 @@ static void mqtt_Console(int argc, char *argv[]);
 /* Exported functions --------------------------------------------------------*/
 
 /**
- * 协议处理初始��?
+ * 协议处理初始
  */
 void MQTT_Conn_Init(void)
 {
@@ -93,7 +93,7 @@ void MQTT_Conn_Init(void)
 /**
  * MQTT设置勾子函数
  * @param poll    任务轮询勾子函数
- * @param msgdata 数据发送失败勾子函��?
+ * @param msgdata 数据发送失败勾子函
  */
 void MQTT_SetHookFun(MQTT_TaskPollFun poll, MQTT_MsgDataFun sendfail)
 {
@@ -104,7 +104,7 @@ void MQTT_SetHookFun(MQTT_TaskPollFun poll, MQTT_MsgDataFun sendfail)
 }
 
 /**
- * 协议处理的任��?
+ * 协议处理的任
  * @param argument
  */
 void MQTT_Conn_Task(void const *argument)
@@ -470,12 +470,8 @@ static void Manager_MQTT(void)
     /*已有服务器连接参��?*/
     if (PARAM_LEGAL(mqttPar.MQTT_Server) && mqttPar.MQTT_Port != 0){
         /*无连接时开始连��?*/
-        if (mClient.isconnected == 0) {
-            /*socketæœªå ç”¨æ—¶è¿žæŽ¥åˆ°æœåŠ¡å™¨*/
-            //strcpy (mqttPar.MQTT_Server, "101.231.241.28");//120.24.231.163 é‚?//  //101.231.241.28ä¸Šæµ· //61.146.113.106101.231.241.28
-            //mqttPar.MQTT_Port = 18836;//18836ä¸Šæµ·//8306é‚“å·¥
+        if (mClient.isconnected == 0) {            
             if (System_SockIsLock() == FALSE) {
-                //
                 System_SetSocket(mqttPar.MQTT_Server, mqttPar.MQTT_Port);
             }
 

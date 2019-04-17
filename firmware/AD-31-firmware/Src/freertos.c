@@ -52,7 +52,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-
+#include "prjlib.h."
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
 
@@ -101,7 +101,16 @@ __weak void vApplicationIdleHook( void )
    important that vApplicationIdleHook() is permitted to return to its calling
    function, because it is the responsibility of the idle task to clean up
    memory allocated by the kernel to any task that has since been deleted. */
-  HAL_IWDG_Refresh(&hiwdg);
+   char *name = NULL;
+
+   name = TaskWDG_IsUpper();
+   if (name == NULL) {
+      HAL_IWDG_Refresh(&hiwdg);
+   } else {
+      THROW(name);
+      THROW(" task watchdog overflow, system will reset.\r\n");
+      HAL_Delay(1000);
+   }
 }
 /* USER CODE END 2 */
 
