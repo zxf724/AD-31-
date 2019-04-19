@@ -84,7 +84,7 @@
 #define PORRST_BKP          (BKP->DR6)
 
 /*使能flash读写保护*/
-#define FLASH_WRP_EN        1
+#define FLASH_WRP_EN        0
 
 /*使能硬件看门狗*/
 #define IWDG_HW_EN          0
@@ -119,7 +119,7 @@
 
 /*UART接收缓存的大小，必须为2的幂次方值*/
 #define UART1_RECEVIE_BUFFER_SIZE   512
-#define UART2_RECEVIE_BUFFER_SIZE   512
+#define UART2_RECEVIE_BUFFER_SIZE   256
 #define UART3_RECEVIE_BUFFER_SIZE   512
 #if UART4 && UART4 > 1
 #define UART4_RECEVIE_BUFFER_SIZE   0
@@ -189,7 +189,7 @@
 
 #define DBG_HEX(dat, len)                       CMD_HEX_Print(dat, len)
 #define DBG_SEND(dat, len)                      CMD_SendData(dat, len)
-#define THROW(str)                              UART_SendData_Direct(DEBUG, (uint8_t *)str, strlen_t(str))
+#define THROW(str)                                  UART_SendData_Direct(DEBUG, (uint8_t *)str, strlen_t(str))
 #define THROW_PRINTF(format, ...)               UART_Printf_Direct(DEBUG, "> "format"\r\n",  ##__VA_ARGS__)
 
 #define DBG_PRINT(level, format, ...)           CMD_Printf_Level(level, format"\r\n", ##__VA_ARGS__)

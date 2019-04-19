@@ -160,4 +160,20 @@ static void datasave_Console(int argc, char *argv[])
         WorkParam_Init();
         CMD_Virtual("system reset 5000");
     }
+    else if (ARGV_EQUAL("setid")) {
+        strcpy(WorkParam.mqtt.MQTT_ClientID, (argv[1]));        
+        WorkParam_Save();
+        DBG_LOG("setid ok :%s.", WorkParam.mqtt.MQTT_ClientID);
+    }
+    else if (ARGV_EQUAL("setservice")) {
+        DBG_LOG("argv0:%s,%s,%s.", argv[0],argv[1]);
+        strcpy(WorkParam.mqtt.MQTT_Server, (argv[1]));        
+        WorkParam_Save();
+        DBG_LOG("setservice ok :s.", WorkParam.mqtt.MQTT_Server);
+    }
+    else if (ARGV_EQUAL("setport")) {
+        WorkParam.mqtt.MQTT_Port = uatoi(argv[1]);       
+        WorkParam_Save();
+        DBG_LOG("setport ok :s.", WorkParam.mqtt.MQTT_Port);
+    }
 }

@@ -509,7 +509,6 @@ static char* WIFI_Scoket_ReceiveProc(char *data)
 static void WIFI_ModuleInit(void)
 {
     char *p = NULL;
-    //UART_SetRemapping(4, 1);
     WIFI_RST_OFF();
     WIFI_PWR_ON();
     WIFI_Param.status = wifi_status_poweron;
@@ -590,7 +589,7 @@ static BOOL WIFI_ScoketConnect(char *addr, uint16_t port)
 {
     WIFI_AT_PRINTF("CIPSTART=\"TCP\",\"%s\",%d", addr, port);
 
-    if (WIFI_WAIT_ACK("OK", 3000)) {
+    if (WIFI_WAIT_ACK("OK", 10000)) {
         return TRUE;
     }
     return FALSE;

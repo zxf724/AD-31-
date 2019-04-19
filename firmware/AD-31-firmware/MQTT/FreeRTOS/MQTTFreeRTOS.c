@@ -71,10 +71,11 @@ int TimerLeftMS(Timer *timer)
 
 char TimerIsExpired(Timer *timer)
 {
+    DBG_LOG("TimerIsExpired %d,%d,%d\r.",HAL_GetTick(),timer->xTicks,timer->xTimeOut);
     if (HAL_GetTick() - timer->xTicks > timer->xTimeOut) {
         return 1;
-    } else {
-        //osDelay(2);
+    } else {        
+        osDelay(2);
         return 0;
     }
 }
@@ -130,7 +131,7 @@ int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
 
 void FreeRTOS_disconnect(Network *n)
 {
-    //待添加
+    
 }
 
 void NetworkInit(Network *n)
@@ -141,7 +142,7 @@ void NetworkInit(Network *n)
     n->disconnect = FreeRTOS_disconnect;
 }
 
-/*自行维护*/
+
 #if 0
 int NetworkConnect(Network* n, char* addr, int port){
     struct freertos_sockaddr sAddr;

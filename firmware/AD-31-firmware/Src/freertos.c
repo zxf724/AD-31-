@@ -52,10 +52,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "prjlib.h."
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
-
+#include "user_comm.h"
+#include "prjlib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,7 +106,7 @@ __weak void vApplicationIdleHook( void )
 
    name = TaskWDG_IsUpper();
    if (name == NULL) {
-      HAL_IWDG_Refresh(&hiwdg);
+      //HAL_IWDG_Refresh(&hiwdg);
    } else {
       THROW(name);
       THROW(" task watchdog overflow, system will reset.\r\n");

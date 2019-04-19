@@ -45,8 +45,8 @@
 /*TCP未连接*/
 #define WIFI_NOT_CONNECT_TIMEOUT    300
 
-#define WIFI_SEND_MAX_SIZE          520
-#define WIFI_RECEIVE_MAX_SIZE       520
+#define WIFI_SEND_MAX_SIZE          1024
+#define WIFI_RECEIVE_MAX_SIZE       1024
 
 /*WIFI远程调试使能*/
 #define WIFI_CMD_EN                 0

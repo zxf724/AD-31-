@@ -462,7 +462,7 @@ static BOOL SFlash_WaitForWriteEnd(uint32_t ms)
     SFLASH_CS_H();
 
     if (res & SFLASH_WIP_FLAG) {
-        //THROW_PRINTF("SFlash_WaitForWriteEnd fail:%#x.", res);
+        THROW_PRINTF("SFlash_WaitForWriteEnd fail:%#x.", res);
     }
 
     return ((res & SFLASH_WIP_FLAG) ? FALSE : TRUE);

@@ -29,8 +29,8 @@
 #define MQTT_DEBUG                      2
 
 /*协议处理缓存长度*/
-#define MQTT_TX_BUFF_SIZE               1400
-#define MQTT_RX_BUFF_SIZE               1400
+#define MQTT_TX_BUFF_SIZE               1024    
+#define MQTT_RX_BUFF_SIZE               1024
 
 /*MQTT 响应超时时间*/
 #define MQTT_TIMEOUT_DEF                10000

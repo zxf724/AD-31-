@@ -39,7 +39,7 @@
 #define SOCKET_CONNECT_TIMEOUT  45
 
 /*定义SOCKET FIFO长度*/
-#define SOCKET_FIFO_SIZE        1400
+#define SOCKET_FIFO_SIZE        1024
 
 /*定义SOCK接收队列最大*/
 #define SOCK_REC_Q_SIZE         8
