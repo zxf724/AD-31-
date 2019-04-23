@@ -154,7 +154,7 @@ void MQTT_Conn_Task(void const *argument)
 }
 
 /**
- * MQTT连接状态查��?,无连接返��?0，已连接返回MQTT使用的网络路��?
+ * MQTT连接状态查,无连接返，已连接返回MQTT使用的网络路
  */
 BOOL MQTT_IsConnected(void)
 {
@@ -162,7 +162,7 @@ BOOL MQTT_IsConnected(void)
 }
 
 /**
- * MQTT数据传输状态查��?
+ * MQTT数据传输状态查
  */
 BOOL MQTT_IsDataFlow(void)
 {
@@ -170,7 +170,7 @@ BOOL MQTT_IsDataFlow(void)
 }
 
 /**
- * 处理订阅的消��?
+ * 处理订阅的消
  * @param data 消息数据
  */
 void messageArrived(MessageData *data)
@@ -205,7 +205,7 @@ void messageArrived(MessageData *data)
 }
 
 /**
- * 协议处理发送数��?
+ * 协议处理发送数
  * @param dat  数据指针
  * @param len  数据长度
  */
@@ -214,7 +214,7 @@ int16_t MQTT_SendData(uint8_t *dat, uint16_t len)
     int16_t rc = -1;
 
     if (System_SockIsConnected(NULL, NULL) > 0 && System_SockIsLock() == FALSE) {
-        /*用于网络指示��?*/
+        /*用于网络指示*/
         DataFlowCnt += 1;
 
         rc = System_SockSend(dat, len);
@@ -233,9 +233,9 @@ int16_t MQTT_SendData(uint8_t *dat, uint16_t len)
 
 /**
  * 协议处理读出数据
- * @param dat  数据读出的指��?
+ * @param dat  数据读出的指
  * @param len  待读出的长度
- * @return 返回实际读出的长��?
+ * @return 返回实际读出的长
  */
 int16_t MQTT_ReadData(uint8_t *dat, uint16_t len)
 {
@@ -261,8 +261,8 @@ int16_t MQTT_ReadData(uint8_t *dat, uint16_t len)
  * 发布MQTT消息
  * @param topic   发布的主题名
  * @param qos     消息服务质量等级
- * @param payload 消息��?
- * @param len     消息体长��?
+ * @param payload 消息
+ * @param len     消息体长
  * @return 返回发布结果
  */
 BOOL Publish_MQTT(char const *topic, Qos qos, uint8_t *payload, uint16_t len)
@@ -374,10 +374,10 @@ BOOL Publish_MQTT(char const *topic, Qos qos, uint8_t *payload, uint16_t len)
 }
 
 /**
- * 订阅MQTT消息，须在MQTT连接之前调用此函��?
+ * 订阅MQTT消息，须在MQTT连接之前调用此函
  * @param topic 订阅的主题名
  * @param qos   消息服务质量等级
- * @param fun   订阅消息回调的指��?
+ * @param fun   订阅消息回调的指
  * @return 返回订阅结果
  */
 BOOL Subscribe_MQTT(char const *topic, Qos qos, BOOL isBroadcast, Arrived_t fun)
@@ -458,7 +458,7 @@ static void Manager_MQTT(void)
         }
     }
 
-    /*多次连接失败后重新鉴��?*/
+    /*多次连接失败后重新鉴*/
     if (Connect_Fail >= CONNECT_FAIL_REAUTH) {
         Connect_Fail = 0;
 #if MQTT_ALIYUN_EN > 0
@@ -467,17 +467,16 @@ static void Manager_MQTT(void)
 #endif
     }
 
-    /*已有服务器连接参��?*/
+    /*已有服务器连接参*/
     if (PARAM_LEGAL(mqttPar.MQTT_Server) && mqttPar.MQTT_Port != 0){
-        /*无连接时开始连��?*/
+        /*无连接时开始连*/
         if (mClient.isconnected == 0) {            
             if (System_SockIsLock() == FALSE) {
                 System_SetSocket(mqttPar.MQTT_Server, mqttPar.MQTT_Port);
             }
-
             /*建立连接*/
             if (path > 0 && addr == mqttPar.MQTT_Server && port == mqttPar.MQTT_Port) {
-                /*参数初始��?*/
+                /*参数初始*/
                 //DBG_LOG("MQTT_Server,MQTT_Port:%s,%d", mqttPar.MQTT_Server,mqttPar.MQTT_Port);
                 connectData.MQTTVersion = 4;
                 connectData.keepAliveInterval = MQTT_PING_INVT_DEF;
@@ -610,7 +609,9 @@ static void MQTT_ReSubscribe(void)
 static BOOL Connect_MQTT(void)
 {
     int rc = 0;
-
+    #if MQTT_TYPE == 1
+    MQTT_ReSubscribe();    
+    #endif
     /*连接失败时重试一��?*/
     rc = MQTTConnect(&mClient, &connectData);
     if (rc != SUCESS) {

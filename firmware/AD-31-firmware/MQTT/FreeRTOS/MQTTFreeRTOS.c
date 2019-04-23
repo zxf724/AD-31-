@@ -71,7 +71,6 @@ int TimerLeftMS(Timer *timer)
 
 char TimerIsExpired(Timer *timer)
 {
-    DBG_LOG("TimerIsExpired %d,%d,%d\r.",HAL_GetTick(),timer->xTicks,timer->xTimeOut);
     if (HAL_GetTick() - timer->xTicks > timer->xTimeOut) {
         return 1;
     } else {        
@@ -94,18 +93,20 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
     do {
         int rc = 0;
 
-        //osDelay(2);
+        osDelay(2);
         rc = MQTT_ReadData(buffer + recvLen, len - recvLen);
-        if (rc > 0) recvLen += rc;
-        else if (rc < 0) {
+        if (rc > 0){
+            recvLen += rc;
+            DBG_LOG("MQTT_ReadData rev %s,recvLen:%d.",buffer,recvLen);
+        }
+        else if (rc <= 0) {
             //osDelay(2);
-            recvLen = rc;
+            if(rc != 0 ){
+                recvLen = rc;
+            }
             break;
         }
-
-        osDelay(2);
     } while (recvLen < len && (HAL_GetTick() - ticks) <= timeout_ms);
-    //DBG_DBG("MQTT_ReadData rev %s.",buffer);
     return recvLen;
 }
 

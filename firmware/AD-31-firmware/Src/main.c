@@ -516,7 +516,7 @@ void StartDefaultTask(void const * argument)
     HTTP_Init();
     DFU_Init();
     DataSave_Init();
-
+    Process_Init();
     /*初始化外设驱*/
 #if NET_WIFI_EN > 0
     WIFI_Init();

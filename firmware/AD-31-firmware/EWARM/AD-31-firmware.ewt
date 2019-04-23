@@ -1193,6 +1193,12 @@
         <name>$PROJ_DIR$\..\Src\prjlib.c</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\Src\Process.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Inc\process.h</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\Src\spi_flash.c</name>
       </file>
       <file>
