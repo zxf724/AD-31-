@@ -94,9 +94,9 @@ void WorkParam_Init(void)
         WorkParam.mqtt.MQTT_Port = 61613;
         strcpy(WorkParam.mqtt.MQTT_UserName, "admin");
         strcpy(WorkParam.mqtt.MQTT_PassWord, "123456");*/
-        strcpy (WorkParam.mqtt.MQTT_Server, "dianxiang.sztosee.cn");
+        strcpy (WorkParam.mqtt.MQTT_Server, "139.199.175.39");      //dianxiang.sztosee.cn
         //WorkParam.mqtt.MQTT_Server[0] = 0;
-        WorkParam.mqtt.MQTT_Port = 8306;
+        WorkParam.mqtt.MQTT_Port = 10085;
         #endif
         strcpy(WorkParam.mqtt.MQTT_UserName, "admin");
         strcpy(WorkParam.mqtt.MQTT_PassWord, "password");
