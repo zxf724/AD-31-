@@ -263,7 +263,12 @@ void CMD_UART_Read_Poll(void)
             if (num == CMD_Pipe) {
                 buf = MMEMORY_ALLOC(len + 1);
                 if (buf != NULL) {
-                    UART_ReadData(num, buf, len);
+                    if(UART_ReadData(num, buf, len)) {
+                        for(uint8_t i=0;i++;i<=8) {
+                            DBG_LOG("buf[%d] = %02x",buf[i]);
+                            //function
+                        }
+                    }
                     buf[len] = 0;
                     CMD_NewData(num, buf, len);
                     MMEMORY_FREE(buf);
