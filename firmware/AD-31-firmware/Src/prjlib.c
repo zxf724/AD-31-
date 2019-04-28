@@ -950,7 +950,7 @@ void delay(uint32_t de)
 {
     volatile uint32_t i = 0;
 
-    while (i < de) {
+    while (i < (de*10000)) {
         i++;
     }
 }

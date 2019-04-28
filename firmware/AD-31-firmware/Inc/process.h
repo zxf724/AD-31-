@@ -189,4 +189,8 @@ void Publish_DFUReq(uint32_t offset, uint16_t size);
 void PublishSParam(uint8 aucBuf[8]);
 void Publish_Reset(void);
 void Publish_BreackerSort(char* topic);
+
+void ControlToCommunicationPoll(uint8_t *dat);
+void CommunicationToControlPoll(uint8_t byte2 , uint8_t byte3);
+
 #endif
