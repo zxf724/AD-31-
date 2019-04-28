@@ -75,4 +75,4 @@ dkms.conf
 *.vtg
 
 #vsocde
-ipch
+*.ipch
