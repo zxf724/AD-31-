@@ -68,12 +68,11 @@ typedef struct
 /* Private define ------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#define M2M_PWR_ON()                   IO_H(M2M_POWER_EN)
-#define M2M_PWR_OFF()                  IO_H(M2M_POWER_EN)
+#define M2M_PWR_ON()                   HAL_GPIO_WritePin(M2M_POWER_EN_GPIO_Port, M2M_POWER_EN_Pin, GPIO_PIN_SET) //IO_H有被优化的可能IO_H(M2M_POWER_EN)
+#define M2M_PWR_OFF()                  HAL_GPIO_WritePin(M2M_POWER_EN_GPIO_Port, M2M_POWER_EN_Pin, GPIO_PIN_RESET)
 
-#define M2M_KEY_ON()                   IO_L(M2M_KEY)
-#define M2M_KEY_OFF()                  IO_H(M2M_KEY)
-
+#define M2M_KEY_ON()                   HAL_GPIO_WritePin(M2M_POWERKEY_GPIO_Port, M2M_POWERKEY_Pin, GPIO_PIN_RESET)
+#define M2M_KEY_OFF()                  HAL_GPIO_WritePin(M2M_POWERKEY_GPIO_Port, M2M_POWERKEY_Pin, GPIO_PIN_RESET)
 #define M2M_LED_ON()                   IO_H(LED_M2M)
 #define M2M_LED_OFF()                  IO_L(LED_M2M)
 

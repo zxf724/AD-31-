@@ -39,7 +39,7 @@ void  databasepack(char *cmd, cJSON *desired, char *buf){
         cJSON_Delete(root);
     }
     else{
-        cJSON_Delete(desired);      
+        cJSON_Delete(desired);
     }
 }
 /**
@@ -51,7 +51,7 @@ int32_t log_in(char *buf){
     root = cJSON_CreateObject();
     if (root != NULL) {
         cJSON_AddStringToObject(root, "version", VERSION);
-        databasepack("CMD-01",root, buf);        
+        databasepack("CMD-01",root, buf);
         DBG_LOG("[MQTT] log_in:%s",buf);
     }
     return strlen(buf);
@@ -65,7 +65,7 @@ int32_t heart(char *buf){
     root = cJSON_CreateObject();
     if (root != NULL) {
         cJSON_AddNumberToObject(root, "heart", WorkParam.mqtt.MQTT_PingInvt);
-        databasepack("CMD-02",root, buf);        
+        databasepack("CMD-02",root, buf);
         DBG_LOG("[MQTT] heart:%s",buf);
     }
     return strlen(buf);
@@ -181,7 +181,7 @@ exit:
         DBG_LOG("[MQTT] c->readbuf:%s",c->readbuf);
         header.byte = PUBLISH << 4;
         rc = header.bits.type;
-    }    
+    }
     return rc;
 #endif
 }
@@ -263,7 +263,7 @@ int keepalive(MQTTClient *c)
         rc = SUCESS;
         goto exit;
     }
-    
+
     if (TimerIsExpired(&c->ping_timer)) {
         if (!c->ping_outstanding) {
             Timer timer;
@@ -379,10 +379,10 @@ exit:
         MQTTCloseSession(c);
     return rc;
 #elif MQTT_TYPE == 1
-    
+
     int rc = readPacket(c, timer); //
-    
-    if(rc != FAILURE){    
+
+    if(rc != FAILURE){
         MQTTString topicName;
         MQTTMessage msg;
         int intQoS;
@@ -395,8 +395,8 @@ exit:
     else{
         keepalive(c);
     }
-    
-exit:    
+
+exit:
     return rc;
 #endif
 }
@@ -405,7 +405,7 @@ int MQTTYield(MQTTClient *c, int timeout_ms)
 {
     int rc = SUCESS;
     Timer timer;
-    
+
     TimerInit(&timer);
     TimerCountdownMS(&timer, timeout_ms);
     do {
@@ -457,11 +457,10 @@ int MQTTStartTask(MQTTClient *client)
 #endif
 
 int waitfor(MQTTClient *c, int packet_type, Timer *timer)
-{ 
+{
     #if MQTT_TYPE == 0
     int rc = FAILURE;
     do {
-        DBG_LOG("waitfor\r");
         if (TimerIsExpired(timer)) break; // we timed out
     }while ((rc = cycle(c, timer)) != packet_type);
     return rc;
@@ -469,7 +468,7 @@ int waitfor(MQTTClient *c, int packet_type, Timer *timer)
     #if MQTT_TYPE == 1
     int rc = FAILURE;
     do {
-        DBG_LOG("waitfor\r");
+
         if (TimerIsExpired(timer)) break; // we timed out
     }while ((rc = cycle(c, timer)) != SUCESS);
     return rc;
@@ -538,10 +537,10 @@ exit:
         goto exit; // there was a problem
 
     // this will be a blocking call, wait for the connack
-    if (waitfor(c, CONNACK, &connect_timer) == SUCESS) {       
+    if (waitfor(c, CONNACK, &connect_timer) == SUCESS) {
         rc = SUCESS;
     } else{
-        rc = FAILURE;        
+        rc = FAILURE;
     }
 
 exit:
@@ -645,8 +644,8 @@ exit:
 }
 int MQTTSubscribe(MQTTClient *c, const char *topicFilter, enum QoS qos, messageHandler messageHandler)
 {
-   
-   
+
+
 
 #if MQTT_TYPE == 0
     MQTTSubackData data;
@@ -662,7 +661,7 @@ int MQTTSubscribe(MQTTClient *c, const char *topicFilter, enum QoS qos, messageH
     #if defined(MQTT_TASK)
     MutexLock(&c->mutex);
     #endif
-    
+
 
     TimerInit(&timer);
     TimerCountdownMS(&timer, c->command_timeout_ms);
