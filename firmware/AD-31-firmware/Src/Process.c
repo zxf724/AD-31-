@@ -129,7 +129,7 @@ void remote_data_arriva(uint8_t *dat, uint16_t len) {
 
         if(cmd != NULL && devicework != NULL && devicework->type == cJSON_Number && Time != NULL) {
             ask_updata(messageid->valueint);
-            if(strstr(cmd->valuestring, "CMD-101")) {
+            if(strstr(cmd->valuestring, "CMD-101")) {       //101 massage time setting 
                 DBG_LOG("boot,shut down or suspend");
                 if(strstr(devicework->valuestring, "1")) {
                     byte3 = (Time->valueint + 10);

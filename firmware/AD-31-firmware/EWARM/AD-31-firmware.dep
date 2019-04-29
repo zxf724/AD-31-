@@ -288,7 +288,7 @@
       <file>$PROJ_DIR$\AD-31-firmware\Obj\stm32f1xx_it.__cstat.et</file>
       <file>$PROJ_DIR$\AD-31-firmware\Obj\MQTT_Conn.pbi</file>
       <file>$PROJ_DIR$\..\Drivers\CMSIS\Include\core_cmFunc.h</file>
-      <file>$PROJ_DIR$\AD-31-firmware\Obj\M2M.__cstat.et</file>
+      <file>$PROJ_DIR$\AD-31-firmware\Obj\m2m.__cstat.et</file>
       <file>$PROJ_DIR$\AD-31-firmware\Obj\stm32f1xx_hal_uart.o</file>
       <file>$PROJ_DIR$\AD-31-firmware\Obj\stm32f1xx_hal_gpio_ex.__cstat.et</file>
       <file>$PROJ_DIR$\AD-31-firmware\Obj\stm32f1xx_hal_rcc_ex.pbi</file>
@@ -389,6 +389,7 @@
       <file>$PROJ_DIR$\AD-31-firmware\Obj\stm32f1xx_hal_tim.o</file>
       <file>$PROJ_DIR$\AD-31-firmware\Obj\prjlib.pbi</file>
       <file>$TOOLKIT_DIR$\inc\c\intrinsics.h</file>
+      <file>$PROJ_DIR$\AD-31-firmware\Obj\Process.__cstat.et</file>
     </outputs>
     <file>
       <name>$PROJ_DIR$\..\Src\prjlib.c</name>
@@ -454,6 +455,10 @@
         <tool>
           <name>ICCARM</name>
           <file> 50</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 383</file>
         </tool>
       </outputs>
       <inputs>
@@ -550,7 +555,7 @@
       <inputs>
         <tool>
           <name>BICOMP</name>
-          <file> 44 15 100 226 159 222 29 215 342 292 301 132 272 169 165 305 30 218 233 270 197 278 374 196 140 236 304 180 378 188 170 134 330 45 344 343 8 364 114 187 85 219 375 355 21 251 281 321 306 382 340 356 266 299 228 348 271 142 99 127 124 41 322 51 269 329 206 31 223 252 274 47 353 260 373 208 230 249 160 189 17 339 313 156 129 103 137 135 120 369 263 363</file>
+          <file> 140 233 301 15 278 100 159 222 196 342 292 270 197 374 236 165 305 30 218 29 132 226 272 215 169 44 304 180 378 188 170 134 330 45 344 343 8 364 114 187 85 219 375 355 21 251 281 321 306 382 340 356 266 299 228 348 271 142 99 127 124 41 322 51 269 329 206 31 223 252 274 47 353 260 373 208 230 249 160 189 17 339 313 156 129 103 137 135 120 369 263 363</file>
         </tool>
         <tool>
           <name>ICCARM</name>

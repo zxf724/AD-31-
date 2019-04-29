@@ -485,7 +485,7 @@ static void Manager_MQTT(void)
                 connectData.password.cstring =  WorkParam.mqtt.MQTT_PassWord;
                 connectData.cleansession = 1;
                 connectData.willFlag = 0;
-
+                
                 /*连接MQTT*/
                 if (Connect_MQTT()) {
                     DBG_LOG("MQTT-clientId:%s", mqttPar.MQTT_ClientID);
