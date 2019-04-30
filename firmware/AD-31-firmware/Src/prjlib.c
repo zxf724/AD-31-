@@ -950,7 +950,7 @@ void delay(uint32_t de)
 {
     volatile uint32_t i = 0;
 
-    while (i < (de*10000)) {
+    while (i < (de)) {
         i++;
     }
 }
@@ -1394,6 +1394,7 @@ void HexStrToByte(const char* source, uint8_t* dest, uint16_t sourceLen)
     }
     return ;
 }
+
 
 /***
  *Version history **************************************************************

@@ -23,6 +23,8 @@
 #include "mqtt_conn.h"
 #include "cjson.h"
 #include "datasave.h"
+#include "process.h"
+
 #if AES_EN > 0
 #include "aes_ex.h"
 #endif
@@ -144,7 +146,7 @@ void MQTT_Conn_Task(void const *argument)
             
         }
         if (System_SockIsConnected(NULL, NULL) > 0) {
-            MQTTYield(&mClient, 10);
+            MQTTYield(&mClient, 10);        //log_in set
             MQTT_SendPoll();
 
         }
@@ -361,7 +363,7 @@ BOOL Publish_MQTT(char const *topic, Qos qos, uint8_t *payload, uint16_t len)
         res = osMessagePut(MQTT_SendQId, (uint32_t)pBuf, 1000);
         //DBG_LOG("[MQTT] DataSend len:%d:%s",pmsg->payloadlen,pmsg->payload);
         if (res == osOK) {
-            //DBG_DBG("MQTT message Q OK.");
+            DBG_DBG("MQTT message Q OK.");
             return TRUE;
         } else {
             DBG_WAR("MQTT message Q fault:%d", (int)res);
@@ -424,8 +426,14 @@ static void Manager_MQTT(void)
         flowcnt = 0;
     }
 
+    //  add addr port , it is true
+    addr = WorkParam.mqtt.MQTT_Server;
+    port = WorkParam.mqtt.MQTT_Port;
+
     /*网络类型变化或者掉线时应断开MQTT，否则在线状态是假的*/
     path = System_SockIsConnected(&addr, &port);
+    DBG_LOG("path is %d",path);
+
     if (pathS != path || addr != mqttPar.MQTT_Server || port != mqttPar.MQTT_Port) {
         pathS = path;
         if (mClient.isconnected) {
@@ -470,7 +478,7 @@ static void Manager_MQTT(void)
     /*已有服务器连接参*/
     if (PARAM_LEGAL(mqttPar.MQTT_Server) && mqttPar.MQTT_Port != 0){
         /*无连接时开始连*/
-        if (mClient.isconnected == 0) {            
+        if (mClient.isconnected == 0) {
             if (System_SockIsLock() == FALSE) {
                 System_SetSocket(mqttPar.MQTT_Server, mqttPar.MQTT_Port);
             }
@@ -485,7 +493,7 @@ static void Manager_MQTT(void)
                 connectData.password.cstring =  WorkParam.mqtt.MQTT_PassWord;
                 connectData.cleansession = 1;
                 connectData.willFlag = 0;
-                
+
                 /*连接MQTT*/
                 if (Connect_MQTT()) {
                     DBG_LOG("MQTT-clientId:%s", mqttPar.MQTT_ClientID);
@@ -494,6 +502,15 @@ static void Manager_MQTT(void)
                     DBG_LOG("MQTT_Server,MQTT_Port:%s,%d", mqttPar.MQTT_Server,mqttPar.MQTT_Port);
                     Connect_Fail = 0;
                     MQTT_ReSubscribe();
+                    
+                    //test
+                    cJSON *desired = NULL;
+                    desired = cJSON_CreateObject();
+                    if(desired != NULL) {
+                        cJSON_AddStringToObject(desired, "test-liuxiong", "connect-ok");
+                    }
+                    CMD_Updata("CMD-001",desired);
+
                 } else {
                     DBG_LOG("Connect_Fail");
                     Connect_Fail++;

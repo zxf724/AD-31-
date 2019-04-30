@@ -264,14 +264,15 @@ void CMD_UART_Read_Poll(void)
                 uint8_t dat[9] = {0};
                 if (buf != NULL) {
                     if(UART_ReadData(num, buf, len)) {
-                        // for(uint8_t i=0;i<=8;i++) {
-                        //     dat[i] = buf[i];
-                        // }
-                        // for(uint8_t i=0;i<=8;i++) {
-                        //     DBG_LOG("dat[%d] = %02x",i,dat[i]);
-                        // }
-                        // delay(100);
-                        // ControlToCommunicationPoll(dat);
+                        for(uint8_t i=0;i<=8;i++) {
+                            dat[i] = buf[i];
+                        }
+                        for(uint8_t i=0;i<=8;i++) {
+                            DBG_LOG("dat[%d] = %02x",i,dat[i]);
+                        }
+                        delay(100);
+                        VailResponse(dat[0]);
+                        ControlToCommunicationPoll(dat);
                     }
                     buf[len] = 0;
                     CMD_NewData(num, buf, len);

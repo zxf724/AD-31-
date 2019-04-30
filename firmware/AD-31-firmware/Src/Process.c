@@ -33,9 +33,14 @@
 
 lstring g_szClientId = "ID002";
 lstring g_szDomain = "www.sztosee.cn"; //
-uint16 g_usPort = 1883;
-static BOOL CMD_Updata(char *cmd, cJSON *desired);
- void remote_data_arriva(uint8_t *dat, uint16_t len);
+uint16_t g_usPort = 1883;
+
+uint8_t g_times = 0;
+uint8_t g_flag_response = 0;
+
+void remote_data_arriva(uint8_t *dat, uint16_t len);
+static uint8_t dat[5] = {0x06,0x01,0x00,0x28,0x2F};     // 11 = 1min +10
+
 /* Private function prototypes -----------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
@@ -48,6 +53,7 @@ void Process_Init(void) {
     Subscribe_MQTT("event/raw", QOS1, FALSE, remote_data_arriva);
     DBG_LOG("Process Start.");
 }
+
 static void net_param_updata(void) {
     cJSON *desired = NULL;
     desired = cJSON_CreateObject();
@@ -62,7 +68,9 @@ static void net_param_updata(void) {
         CMD_Updata("CMD-101", desired);
     }
 }
-static BOOL CMD_Updata(char *cmd, cJSON *desired) {
+
+
+BOOL CMD_Updata(char *cmd, cJSON *desired) {
     BOOL ret = FALSE;
     char *s = NULL;
     cJSON *root = NULL;
@@ -85,7 +93,7 @@ static BOOL CMD_Updata(char *cmd, cJSON *desired) {
     }
     else{
         cJSON_Delete(desired);
-        //cJSON_Delete(root);
+        // cJSON_Delete(root);
     }
     return ret;
 }
@@ -203,9 +211,31 @@ void ControlToCommunicationPoll(uint8_t *dat) {
         DBG_LOG("dat check is corrcet!");
         gs_byte5_byte6 = (dat[5] << 8) | dat[6];
         DBG_LOG("gs_byte5_byte6 is %04x",gs_byte5_byte6);
-        if(gs_byte5_byte6 > 0) {
+        if(gs_byte5_byte6 < 500) {
+            DBG_LOG("left time less than 500 seconds");
             cJSON_AddNumberToObject(sit, "sit", 1);
             CMD_Updata("CMD-03",sit);
+        }
+        // dat[7] error!
+        if (dat[7] > 0) {
+            DBG_LOG("something error");
+            switch (dat[7]) {
+            case 0x03:
+                /* code */
+                // CMD_Updata();
+                break;
+            case 0x04:
+                /* code */
+                break;
+            case 0x07:
+                /* code */
+                break;
+            case 0x08:
+                /* code */
+                break;
+            default:
+                break;
+            } // end of switch
         }
     }
     delay(200);
@@ -215,11 +245,30 @@ void ControlToCommunicationPoll(uint8_t *dat) {
  * communication board to control board
  */
 void CommunicationToControlPoll(uint8_t byte2 , uint8_t byte3) {
-    static uint8_t dat[5] = {0x06,0x01,0x00,0x28,0x2F};     // 11 = 1min +10
     dat[2] = byte2;
     dat[3] = byte3;
     // DBG_LOG("dat[3] = %02x",dat[3]);
     //check digit
     dat[4] = dat[0] + dat[1] + dat[2] + dat[3];
     CMD_PipeSendData(2,dat,sizeof(dat));  //send data to board
+    g_flag_response = 1;
+}
+
+
+/**
+ * vaild response fault tolerance 100mm should receive the answer data
+ */
+void VailResponse(uint8_t dat0) {
+    if(dat0 == 0x06) {
+        g_flag_response = 0;
+    } 
+    if((dat0 != 0x06) && (g_flag_response == 1)) {
+        osDelay(100);
+        CMD_PipeSendData(2,dat,sizeof(dat));  //send data to board
+        g_times++;
+    }
+    if (g_times >= MAX_RESPONSED_ERROR) {
+        // response error
+        // CMD_Updata()
+    }
 }
