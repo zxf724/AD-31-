@@ -556,6 +556,7 @@ exit:
     return rc;
 #endif
 }
+
 int MQTTSetMessageHandler(MQTTClient* c, const char* topicFilter, messageHandler messageHandler)
 {
     int rc = FAILURE;

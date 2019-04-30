@@ -22,11 +22,16 @@
 /* Includes ------------------------------------------------------------------*/
 #include "prjlib.h"
 #include "config.h"
+#include "cJSON.h"
 
 /* Exported define -----------------------------------------------------------*/
 /*定义分路开关的最大数*/
 #define PATH_MAX    12
 #define __HARD_VER  2
+
+// times to responsed the error communication
+#define MAX_RESPONSED_ERROR     30
+
 /* Exported types ------------------------------------------------------------*/
 
 /*定义设备参数结构体*/
@@ -189,4 +194,11 @@ void Publish_DFUReq(uint32_t offset, uint16_t size);
 void PublishSParam(uint8 aucBuf[8]);
 void Publish_Reset(void);
 void Publish_BreackerSort(char* topic);
+void ControlToCommunicationPoll(uint8_t *dat);
+
+void CommunicationToControlPoll(uint8_t byte2 , uint8_t byte3);
+void VailResponse(uint8_t dat0);
+BOOL CMD_Updata(char *cmd, cJSON *desired);
+
+
 #endif

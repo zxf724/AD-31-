@@ -78,4 +78,7 @@ void CMD_HEX_Print_Level(uint8_t level, uint8_t *dat, uint16_t len);
 
 void CMD_Virtual(char *cmd);
 
+void CMD_PipeSendData(uint8_t pipe, uint8_t *dat, uint16_t len);
+
+
 #endif

@@ -20,6 +20,7 @@
 #include "config.h"
 #include "cJSON.H"
 #include "datasave.H"
+#include "console.h"
 /* Private typedef -----------------------------------------------------------*/
 
 /* Private define ------------------------------------------------------------*/
@@ -32,9 +33,14 @@
 
 lstring g_szClientId = "ID002";
 lstring g_szDomain = "www.sztosee.cn"; //
-uint16 g_usPort = 1883;
-static BOOL CMD_Updata(char *cmd, cJSON *desired);
- void remote_data_arriva(uint8_t *dat, uint16_t len);
+uint16_t g_usPort = 1883;
+
+uint8_t g_times = 0;
+uint8_t g_flag_response = 0;
+
+void remote_data_arriva(uint8_t *dat, uint16_t len);
+static uint8_t dat[5] = {0x06,0x01,0x00,0x28,0x2F};     // 11 = 1min +10
+
 /* Private function prototypes -----------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
@@ -47,6 +53,7 @@ void Process_Init(void) {
     Subscribe_MQTT("event/raw", QOS1, FALSE, remote_data_arriva);
     DBG_LOG("Process Start.");
 }
+
 static void net_param_updata(void) {
     cJSON *desired = NULL;
     desired = cJSON_CreateObject();
@@ -61,7 +68,9 @@ static void net_param_updata(void) {
         CMD_Updata("CMD-101", desired);
     }
 }
-static BOOL CMD_Updata(char *cmd, cJSON *desired) {
+
+
+BOOL CMD_Updata(char *cmd, cJSON *desired) {
     BOOL ret = FALSE;
     char *s = NULL;
     cJSON *root = NULL;
@@ -84,7 +93,7 @@ static BOOL CMD_Updata(char *cmd, cJSON *desired) {
     }
     else{
         cJSON_Delete(desired);
-        //cJSON_Delete(root);
+        // cJSON_Delete(root);
     }
     return ret;
 }
@@ -110,30 +119,59 @@ void ask_updata(uint32_t messageid) {
  * @param len  
  */
 void remote_data_arriva(uint8_t *dat, uint16_t len) {
-    cJSON * root,*cmd, *desired;
+    cJSON * root,*cmd ;
     *(dat + len) = 0;
-    #if AES_EN > 0   
-    aes_cbc_inv_cipher_buff(dat, len, aes_get_expansion_key(), aes_get_vi());   
+    static uint8_t byte2,byte3;
+    #if AES_EN > 0
+    aes_cbc_inv_cipher_buff(dat, len, aes_get_expansion_key(), aes_get_vi());
     #endif
     root = cJSON_Parse((const char *)dat);
     if (root != NULL) {
-        cJSON *timestamp ;
-        timestamp = cJSON_GetObjectItem(root, "timestamp");        
-        cJSON *messageid = cJSON_GetObjectItem(root, "messageid");
+        cJSON *devicework ;
+        devicework = cJSON_GetObjectItem(root, "devicework");
+        cJSON *Time ;
+        Time = cJSON_GetObjectItem(root, "time");
         cmd = cJSON_GetObjectItem(root, "cmd");
-        cJSON * desired = cJSON_GetObjectItem(root, "desired");
-        if(cmd != NULL && messageid != NULL && messageid->type == cJSON_Number && desired != NULL){
+        cJSON *messageid;
+        messageid = cJSON_GetObjectItem(root, "messageid");
+
+        if(cmd != NULL && devicework != NULL && devicework->type == cJSON_Number && Time != NULL) {
             ask_updata(messageid->valueint);
-            if(strstr(cmd->valuestring, "CMD-01")){
-                DBG_LOG("Request info");                
+            if(strstr(cmd->valuestring, "CMD-101")) {       //101 massage time setting 
+                DBG_LOG("boot,shut down or suspend");
+                if(strstr(devicework->valuestring, "1")) {
+                    byte3 = (Time->valueint + 10);
+                    DBG_LOG("massage time is %d",Time->valueint);
+                }
+                if(strstr(devicework->valuestring, "0")) {
+                    DBG_LOG("device shut down!");
+                }
+                if(strstr(devicework->valuestring, "2")) {
+                    DBG_LOG("device suspend!");
+                }
+                byte2 = 0;
+                CommunicationToControlPoll(byte2,byte3);
+                DBG_LOG("massage time is %d mins",dat[3]);
             }
-            else if(strstr(cmd->valuestring, "CMD-03")){                
-                
+            else if(strstr(cmd->valuestring, "CMD-102")){   // no use those yet
+                    DBG_LOG("mode change, now is 0 is feasible!");
+                    cJSON *mode ;
+                    mode = cJSON_GetObjectItem(root,"mode");
+                    if(mode != NULL) {
+                        byte2 = mode->valueint;
+                    }
+                    CommunicationToControlPoll(byte2,byte3);
             }
-            else if(strstr(cmd->valuestring, "CMD-02")){
-               
+            else if(strstr(cmd->valuestring, "CMD-103")){
+                    DBG_LOG("change the chair");
+                    cJSON *control;
+                    control = cJSON_GetObjectItem(root, "control");
+                    byte2 = 0;
+                    byte3 = control->valueint;
+                    CommunicationToControlPoll(byte2,byte3);
             }
-        }        
+        }
+        CommunicationToControlPoll(byte2,byte3);
         cJSON_Delete(root);
     }
 }
@@ -153,5 +191,84 @@ static void process_Console(int argc, char *argv[])
     if (ARGV_EQUAL("info_updata")) {
         net_param_updata();
         DBG_LOG("Console AllInfo_Updata\r");
+    }
+}
+
+
+/**
+ *  control board to communication board
+ */
+void ControlToCommunicationPoll(uint8_t *dat) {
+    //in this case, byte5,byte6 means left message time
+    static uint16_t gs_byte5_byte6 = 0;
+    cJSON *sit;
+    uint8_t tmp_dat = 0;
+
+    for(uint8_t i=0;i<=7;i++) {
+        tmp_dat += dat[i];
+    }
+    if(tmp_dat == dat[8]) {
+        DBG_LOG("dat check is corrcet!");
+        gs_byte5_byte6 = (dat[5] << 8) | dat[6];
+        DBG_LOG("gs_byte5_byte6 is %04x",gs_byte5_byte6);
+        if(gs_byte5_byte6 < 500) {
+            DBG_LOG("left time less than 500 seconds");
+            cJSON_AddNumberToObject(sit, "sit", 1);
+            CMD_Updata("CMD-03",sit);
+        }
+        // dat[7] error!
+        if (dat[7] > 0) {
+            DBG_LOG("something error");
+            switch (dat[7]) {
+            case 0x03:
+                /* code */
+                // CMD_Updata();
+                break;
+            case 0x04:
+                /* code */
+                break;
+            case 0x07:
+                /* code */
+                break;
+            case 0x08:
+                /* code */
+                break;
+            default:
+                break;
+            } // end of switch
+        }
+    }
+    delay(200);
+}
+
+/**
+ * communication board to control board
+ */
+void CommunicationToControlPoll(uint8_t byte2 , uint8_t byte3) {
+    dat[2] = byte2;
+    dat[3] = byte3;
+    // DBG_LOG("dat[3] = %02x",dat[3]);
+    //check digit
+    dat[4] = dat[0] + dat[1] + dat[2] + dat[3];
+    CMD_PipeSendData(2,dat,sizeof(dat));  //send data to board
+    g_flag_response = 1;
+}
+
+
+/**
+ * vaild response fault tolerance 100mm should receive the answer data
+ */
+void VailResponse(uint8_t dat0) {
+    if(dat0 == 0x06) {
+        g_flag_response = 0;
+    } 
+    if((dat0 != 0x06) && (g_flag_response == 1)) {
+        osDelay(100);
+        CMD_PipeSendData(2,dat,sizeof(dat));  //send data to board
+        g_times++;
+    }
+    if (g_times >= MAX_RESPONSED_ERROR) {
+        // response error
+        // CMD_Updata()
     }
 }
