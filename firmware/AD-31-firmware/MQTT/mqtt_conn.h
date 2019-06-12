@@ -36,7 +36,7 @@
 #define MQTT_TIMEOUT_DEF                10000
 
 /*MQTT的心跳包间隔,实际发送间隔为设置值的一半，单位秒*/
-#define MQTT_PING_INVT_DEF              110
+#define MQTT_PING_INVT_DEF              80
 #define MQTT_DATA_INVT_DEF              1200 //主动上报间隔时间
 /*阿里云接入使能*/
 #define MQTT_ALIYUN_EN                  0

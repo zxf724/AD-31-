@@ -543,6 +543,8 @@ void StartDefaultTask(void const * argument)
     /* Infinite loop */
     for (;;) {
         // CommunicationToControlPoll(0,40);
+
+        // IO_H(M2M_POWER_EN);
         osDelay(2);
         CMD_UART_Read_Poll();
         UART_Refresh_Poll();

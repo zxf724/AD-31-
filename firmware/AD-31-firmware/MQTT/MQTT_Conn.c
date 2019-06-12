@@ -148,7 +148,6 @@ void MQTT_Conn_Task(void const *argument)
         if (System_SockIsConnected(NULL, NULL) > 0) {
             MQTTYield(&mClient, 10);        //log_in set
             MQTT_SendPoll();
-
         }
         //DBG_LOG("[PMET] MQTT_Conn_Task\r");
         osDelay(2);
@@ -432,7 +431,7 @@ static void Manager_MQTT(void)
 
     /*网络类型变化或者掉线时应断开MQTT，否则在线状态是假的*/
     path = System_SockIsConnected(&addr, &port);
-    DBG_LOG("path is %d",path);
+    // DBG_LOG("path is %d",path);
 
     if (pathS != path || addr != mqttPar.MQTT_Server || port != mqttPar.MQTT_Port) {
         pathS = path;
@@ -509,7 +508,7 @@ static void Manager_MQTT(void)
                     if(desired != NULL) {
                         cJSON_AddStringToObject(desired, "test-liuxiong", "connect-ok");
                     }
-                    CMD_Updata("CMD-001",desired);
+                    // CMD_Updata("CMD-01",desired);
 
                 } else {
                     DBG_LOG("Connect_Fail");
@@ -627,7 +626,7 @@ static BOOL Connect_MQTT(void)
 {
     int rc = 0;
     #if MQTT_TYPE == 1
-    MQTT_ReSubscribe();    
+    MQTT_ReSubscribe();
     #endif
     /*连接失败时重试一��?*/
     rc = MQTTConnect(&mClient, &connectData);

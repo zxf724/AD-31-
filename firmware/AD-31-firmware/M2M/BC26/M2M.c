@@ -366,6 +366,7 @@ static void M2M_ManagerPoll(void)
         if (M2M_Param.powerOnOff) {
             M2M_ModulePowerOn();
             DBG_LOG("M2M module power on init.");
+            DBG_LOG("test1");
         }
         break;
     case M2M_status_poweron:
