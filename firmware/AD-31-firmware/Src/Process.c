@@ -57,7 +57,7 @@ void Process_Init(void) {
 static void net_param_updata(void) {
     cJSON *desired = NULL;
     desired = cJSON_CreateObject();
-    if (desired != NULL) {        
+    if (desired != NULL) {
         cJSON_AddStringToObject(desired, "ip", WorkParam.mqtt.MQTT_Server);
         cJSON_AddNumberToObject(desired, "port", WorkParam.mqtt.MQTT_Port);
         cJSON_AddNumberToObject(desired, "heartbeat", WorkParam.mqtt.MQTT_PingInvt);
@@ -100,9 +100,9 @@ BOOL CMD_Updata(char *cmd, cJSON *desired) {
 
 
 /**
- * 
- * @param dat  
- * @param len  
+ *
+ * @param dat
+ * @param len
  */
 void ask_updata(uint32_t messageid) {
     cJSON *askdesired;
@@ -114,9 +114,9 @@ void ask_updata(uint32_t messageid) {
     }
 }
 /**
- * 
- * @param dat  
- * @param len  
+ *
+ * @param dat
+ * @param len
  */
 void remote_data_arriva(uint8_t *dat, uint16_t len) {
     cJSON * root,*cmd ;
@@ -125,28 +125,29 @@ void remote_data_arriva(uint8_t *dat, uint16_t len) {
     #if AES_EN > 0
     aes_cbc_inv_cipher_buff(dat, len, aes_get_expansion_key(), aes_get_vi());
     #endif
-    root = cJSON_Parse((const char *)dat);
+    // root = cJSON_Parse((const char *)dat);
+    root = cJSON_Parse(dat);
     if (root != NULL) {
-        cJSON *devicework ;
-        devicework = cJSON_GetObjectItem(root, "devicework");
-        cJSON *Time ;
-        Time = cJSON_GetObjectItem(root, "time");
+        cJSON *desired ;
+        desired = cJSON_GetObjectItem(root, "desired");
+        cJSON *timestamp ;
+        timestamp = cJSON_GetObjectItem(root, "timestamp");
         cmd = cJSON_GetObjectItem(root, "cmd");
         cJSON *messageid;
         messageid = cJSON_GetObjectItem(root, "messageid");
 
-        if(cmd != NULL && devicework != NULL && devicework->type == cJSON_Number && Time != NULL) {
+        if(cmd != NULL && desired != NULL && timestamp != NULL) {
             ask_updata(messageid->valueint);
-            if(strstr(cmd->valuestring, "CMD-101")) {       //101 massage time setting 
+            if(strstr(cmd->valuestring, "CMD-101")) {       //101 massage time setting
                 DBG_LOG("boot,shut down or suspend");
-                if(strstr(devicework->valuestring, "1")) {
-                    byte3 = (Time->valueint + 10);
-                    DBG_LOG("massage time is %d",Time->valueint);
+                if(strstr(desired->valuestring, "1")) {
+                    byte3 = (timestamp->valueint + 10);
+                    DBG_LOG("massage time is %d",timestamp->valueint);
                 }
-                if(strstr(devicework->valuestring, "0")) {
+                if(strstr(desired->valuestring, "0")) {
                     DBG_LOG("device shut down!");
                 }
-                if(strstr(devicework->valuestring, "2")) {
+                if(strstr(desired->valuestring, "2")) {
                     DBG_LOG("device suspend!");
                 }
                 byte2 = 0;
@@ -170,9 +171,14 @@ void remote_data_arriva(uint8_t *dat, uint16_t len) {
                     byte3 = control->valueint;
                     CommunicationToControlPoll(byte2,byte3);
             }
+            else if(strstr(cmd->valuestring, "CMD-98")){
+                    DBG_LOG("hi there, here is the code!");
+            }
         }
-        CommunicationToControlPoll(byte2,byte3);
+        // CommunicationToControlPoll(byte2,byte3);
         cJSON_Delete(root);
+    } else {
+        DBG_LOG("hello,world!");
     }
 }
 
@@ -186,7 +192,7 @@ static void process_Console(int argc, char *argv[])
     if (strcmp(argv[0], "publish") == 0) {
         argv++;
         argc--;
-        
+
     }
     if (ARGV_EQUAL("info_updata")) {
         net_param_updata();
@@ -247,7 +253,7 @@ void ControlToCommunicationPoll(uint8_t *dat) {
 void CommunicationToControlPoll(uint8_t byte2 , uint8_t byte3) {
     dat[2] = byte2;
     dat[3] = byte3;
-    // DBG_LOG("dat[3] = %02x",dat[3]);
+    DBG_LOG("dat[3] = %02x",dat[3]);
     //check digit
     dat[4] = dat[0] + dat[1] + dat[2] + dat[3];
     CMD_PipeSendData(2,dat,sizeof(dat));  //send data to board
@@ -261,7 +267,7 @@ void CommunicationToControlPoll(uint8_t byte2 , uint8_t byte3) {
 void VailResponse(uint8_t dat0) {
     if(dat0 == 0x06) {
         g_flag_response = 0;
-    } 
+    }
     if((dat0 != 0x06) && (g_flag_response == 1)) {
         osDelay(100);
         CMD_PipeSendData(2,dat,sizeof(dat));  //send data to board

@@ -19,6 +19,8 @@
 #include "user_comm.h"
 #include "mqtt_conn.h"
 
+extern void remote_data_arriva(uint8_t *dat, uint16_t len);
+
 int ThreadStart(Thread *thread, void (*fn)(void *), void *arg)
 {
     int rc = 0;
@@ -92,7 +94,6 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 
     do {
         int rc = 0;
-
         osDelay(2);
         rc = MQTT_ReadData(buffer + recvLen, len - recvLen);
         if (rc > 0){
@@ -106,6 +107,9 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
             }
             break;
         }
+        // osDelay(50);
+        remote_data_arriva(buffer,recvLen);
+        // memset(buffer,0,sizeof(buffer));
     } while (recvLen < len && (HAL_GetTick() - ticks) <= timeout_ms);
     return recvLen;
 }

@@ -313,7 +313,6 @@ static void WIFI_ManagerPoll(void)
             for(uint8_t i = 0; i < 2; i++){
                 if(WIFI_EnterSmartConfig())break;
             }
-            
         }
     } else {
         TS_INIT(tsStation);

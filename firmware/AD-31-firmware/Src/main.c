@@ -433,14 +433,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SFLASH_CS_Pin|M2M_POWERKEY_Pin|M2M_POWER_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SFLASH_CS_Pin|M2M_POWERKEY_Pin|M2M_POWER_EN_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SFLASH_WP_Pin|WIFI_RST_Pin|WIFI_POWER_EN_Pin|LED_NET_Pin
-                          |LED_ERR_Pin, GPIO_PIN_RESET);
+                          |LED_ERR_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : SFLASH_CS_Pin M2M_POWER_EN_Pin */
-  GPIO_InitStruct.Pin = SFLASH_CS_Pin|M2M_POWER_EN_Pin;
+  GPIO_InitStruct.Pin = SFLASH_CS_Pin|M2M_POWER_EN_Pin|M2M_POWERKEY_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -455,12 +455,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : M2M_POWERKEY_Pin */
-  GPIO_InitStruct.Pin = M2M_POWERKEY_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(M2M_POWERKEY_GPIO_Port, &GPIO_InitStruct);
+  // /*Configure GPIO pin : M2M_POWERKEY_Pin */
+  // GPIO_InitStruct.Pin = M2M_POWERKEY_Pin;
+  // GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  // GPIO_InitStruct.Pull = GPIO_NOPULL;
+  // GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  // HAL_GPIO_Init(M2M_POWERKEY_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : M2M_STATUS_Pin */
   GPIO_InitStruct.Pin = M2M_STATUS_Pin;
@@ -539,12 +539,12 @@ void StartDefaultTask(void const * argument)
 #endif
     DBG_LOG("System Start!");
     LED_ALL_OFF();
+    HAL_GPIO_WritePin(GPIOA, SFLASH_CS_Pin|M2M_POWERKEY_Pin|M2M_POWER_EN_Pin, GPIO_PIN_SET);
     //UART_SetRemapping(4, 1);
     /* Infinite loop */
     for (;;) {
+        // DBG_LOG("hello,world!");
         // CommunicationToControlPoll(0,40);
-
-        // IO_H(M2M_POWER_EN);
         osDelay(2);
         CMD_UART_Read_Poll();
         UART_Refresh_Poll();
